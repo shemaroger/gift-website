@@ -1,0 +1,63 @@
+services:
+
+  db:
+    image: postgres:16-alpine
+    container_name: giftrwa_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: giftrwa_db
+      POSTGRES_USER: giftrwa_user
+      POSTGRES_PASSWORD: Test@123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - giftrwa_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U giftrwa_user -d giftrwa_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./giftwebsite
+      dockerfile: Dockerfile
+    container_name: giftrwa_backend
+    restart: unless-stopped
+    environment:
+      SECRET_KEY: your-very-secret-key-change-this-in-production
+      DEBUG: "False"
+      DB_NAME: giftrwa_db
+      DB_USER: giftrwa_user
+      DB_PASSWORD: Test@123
+      DB_HOST: db
+      DB_PORT: "5432"
+      EMAIL_HOST_USER: shemaroger60@gmail.com
+      EMAIL_HOST_PASSWORD: uwcq soko gfkc zdri
+      CLOUDINARY_CLOUD_NAME: your_cloud_name
+      CLOUDINARY_API_KEY: your_api_key
+      CLOUDINARY_API_SECRET: your_api_secret
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - giftrwa_network
+
+  frontend:
+    build:
+      context: ./gift-frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: https://www.giftrwa.org/api
+        VITE_API: https://www.giftrwa.org/api
+    container_name: giftrwa_frontend
+    restart: unless-stopped
+    networks:
+      - giftrwa_network
+
+volumes:
+  postgres_data:
+
+networks:
+  giftrwa_network:
+    driver: bridge
