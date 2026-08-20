@@ -1,0 +1,4 @@
+giftwebsite/.env
+gift-frontend/.env
+*.pyc
+__pycache__/
