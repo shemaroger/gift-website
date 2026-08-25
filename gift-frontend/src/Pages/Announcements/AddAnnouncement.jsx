@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Save, Plus, Edit, Search, Bell, AlertCircle, Calendar, Eye, EyeOff, Clock, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { createAnnouncement, fetchAnnouncements, UpdateAnnouncement } from "../../api";
+import { Save, Plus, Edit, Search, Bell, AlertCircle, Calendar, Eye, EyeOff, Clock, X, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { createAnnouncement, fetchAnnouncements, UpdateAnnouncement, deleteAnnouncement } from "../../api";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -153,6 +153,24 @@ export default function AnnouncementManagementForm() {
     setEditingId(null);
     setError(null);
     setShowForm(false);
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this announcement? This cannot be undone.')) {
+      return;
+    }
+    try {
+      const result = await deleteAnnouncement(id);
+      if (result.success) {
+        setAnnouncements(prev => prev.filter(a => a.id !== id));
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (err) {
+      console.error('Error deleting announcement:', err);
+      toast.error('Failed to delete announcement.');
+    }
   };
 
   const handlePageChange = (page) => {
@@ -347,7 +365,7 @@ export default function AnnouncementManagementForm() {
                         name="title"
                         value={formData.title}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                         placeholder="e.g. Site Maintenance"
                       />
                     </div>
@@ -361,7 +379,7 @@ export default function AnnouncementManagementForm() {
                         value={formData.message}
                         onChange={handleInputChange}
                         rows={4}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                         placeholder="Enter announcement message"
                       />
                     </div>
@@ -377,7 +395,7 @@ export default function AnnouncementManagementForm() {
                             name="show_until"
                             value={formData.show_until}
                             onChange={handleInputChange}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                           />
                         </div>
                         <p className="mt-1 text-xs text-gray-500">Leave blank for no expiration date</p>
@@ -535,6 +553,13 @@ export default function AnnouncementManagementForm() {
                             title="Edit"
                           >
                             <Edit size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(announcement.id)}
+                            className="p-1 text-orange-600 hover:text-orange-800"
+                            title="Delete"
+                          >
+                            <Trash2 size={16} />
                           </button>
                         </div>
                       </div>

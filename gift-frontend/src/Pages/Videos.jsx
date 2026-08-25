@@ -123,16 +123,16 @@ const VideoGalleryPage = () => {
 
   return (
     <div className="min-h-screen mt-28 md:mt-32 bg-white">
-      <div className="bg-slate-900 py-16 md:py-20">
+      <div className="bg-gray-200 py-8 md:py-10">
         <div className="container mx-auto px-4 max-w-3xl text-center">
-          <span className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/15 border border-orange-500/30 rounded-full text-orange-300 text-xs font-semibold uppercase tracking-wide mb-6">
+          <span className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/15 border border-orange-500/30 rounded-full text-orange-700 text-xs font-semibold uppercase tracking-wide mb-4">
             <Camera className="w-3.5 h-3.5" />
             Video Stories
           </span>
-          <h1 className="font-display text-3xl md:text-5xl font-semibold text-white leading-tight mb-4">
+          <h1 className="font-display text-2xl md:text-4xl font-semibold text-gray-900 leading-tight mb-2">
             Watch the work in motion
           </h1>
-          <p className="text-gray-300 text-base md:text-lg leading-relaxed">
+          <p className="text-gray-600 text-sm md:text-base leading-relaxed">
             Training sessions, testimonials, and community moments — captured on camera.
           </p>
         </div>
@@ -238,7 +238,7 @@ const VideoGalleryPage = () => {
                   </div>
                 ) : (
                   <video
-                    src={selectedVideo.video_url}
+                    src={selectedVideo.media_url || selectedVideo.video_url}
                     controls
                     autoPlay
                     className="w-full h-[400px] object-cover rounded-lg mb-4"

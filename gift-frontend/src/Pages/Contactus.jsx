@@ -77,34 +77,34 @@ const Contactus = () => {
   return (
     <div className="bg-gray-100 mt-28 md:mt-32">
       {/* Hero Section */}
-      <div className="bg-slate-900 py-16 md:py-20">
+      <div className="bg-gray-200 py-8 md:py-10">
         <div className="container mx-auto px-4 max-w-3xl text-center">
-          <span className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/15 border border-orange-500/30 rounded-full text-orange-300 text-xs font-semibold uppercase tracking-wide mb-6">
+          <span className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/15 border border-orange-500/30 rounded-full text-orange-700 text-xs font-semibold uppercase tracking-wide mb-4">
             <MessageCircle className="w-3.5 h-3.5" />
             Contact Us
           </span>
-          <h1 className="font-display text-3xl md:text-5xl font-semibold text-white leading-tight mb-4">
+          <h1 className="font-display text-2xl md:text-4xl font-semibold text-gray-900 leading-tight mb-2">
             Questions, partnerships, or just want to say hello?
           </h1>
-          <p className="text-gray-300 text-base md:text-lg leading-relaxed">
+          <p className="text-gray-600 text-sm md:text-base leading-relaxed">
             Reach us directly or drop a message below — we read every one.
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-10 max-w-2xl mx-auto">
-            <div className="border border-white/10 rounded-lg p-4">
-              <Phone className="w-5 h-5 text-orange-400 mb-2 mx-auto" />
-              <div className="text-sm font-semibold text-white">Call Us</div>
-              <div className="text-xs text-gray-400">Quick response</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8 max-w-2xl mx-auto">
+            <div className="border border-gray-300 bg-white rounded-lg p-4">
+              <Phone className="w-5 h-5 text-orange-600 mb-2 mx-auto" />
+              <div className="text-sm font-semibold text-gray-900">Call Us</div>
+              <div className="text-xs text-gray-500">Quick response</div>
             </div>
-            <div className="border border-white/10 rounded-lg p-4">
-              <Mail className="w-5 h-5 text-green-400 mb-2 mx-auto" />
-              <div className="text-sm font-semibold text-white">Email Us</div>
-              <div className="text-xs text-gray-400">Detailed discussion</div>
+            <div className="border border-gray-300 bg-white rounded-lg p-4">
+              <Mail className="w-5 h-5 text-green-600 mb-2 mx-auto" />
+              <div className="text-sm font-semibold text-gray-900">Email Us</div>
+              <div className="text-xs text-gray-500">Detailed discussion</div>
             </div>
-            <div className="border border-white/10 rounded-lg p-4">
-              <MapPin className="w-5 h-5 text-orange-400 mb-2 mx-auto" />
-              <div className="text-sm font-semibold text-white">Visit Us</div>
-              <div className="text-xs text-gray-400">In-person meeting</div>
+            <div className="border border-gray-300 bg-white rounded-lg p-4">
+              <MapPin className="w-5 h-5 text-orange-600 mb-2 mx-auto" />
+              <div className="text-sm font-semibold text-gray-900">Visit Us</div>
+              <div className="text-xs text-gray-500">In-person meeting</div>
             </div>
           </div>
         </div>

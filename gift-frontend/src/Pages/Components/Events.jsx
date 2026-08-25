@@ -3,14 +3,14 @@ import { Calendar, Clock, ChevronRight } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { fetchEvents } from "../../publicApi";
 
-const EventCard = ({ id, start_date, title, location, event_type }) => {
+const EventCard = ({ uuid, start_date, title, location, event_type }) => {
   const navigate = useNavigate();
   const eventDate = new Date(start_date);
   const day = eventDate.getDate().toString().padStart(2, '0');
   const month = eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
 
   const handleClick = () => {
-    navigate(`/EventDetails/${id}`);
+    navigate(`/EventDetails/${uuid}`);
   };
 
   return (

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { fetchblogById } from "../publicApi";
-import { User, Calendar, Tag, FileText, Sparkles, ArrowLeft } from 'lucide-react';
+import { fetchblogByUuid } from "../publicApi";
+import { Calendar, Tag, FileText, Sparkles, ArrowLeft } from 'lucide-react';
 
 const BlogDetail = () => {
   const { id } = useParams();
@@ -13,7 +13,7 @@ const BlogDetail = () => {
     const fetchBlog = async () => {
       try {
         setLoading(true);
-        const blogData = await fetchblogById(id);
+        const blogData = await fetchblogByUuid(id);
         setBlog(blogData.data);
       } catch (err) {
         setError(err.message || 'Failed to fetch blog');
@@ -57,11 +57,11 @@ const BlogDetail = () => {
 
   if (!blog) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-900 px-4 text-center">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-green-900 px-4 text-center">
         <h1 className="font-display text-3xl md:text-4xl font-semibold text-white mb-4">
           Blog Not Found
         </h1>
-        <p className="text-gray-300 max-w-md mb-8">
+        <p className="text-green-50 max-w-md mb-8">
           The blog post you're looking for doesn't exist.
         </p>
         <button
@@ -88,33 +88,29 @@ const BlogDetail = () => {
   return (
     <div className='mt-28 md:mt-32'>
       {/* Hero Section */}
-      <div className="bg-slate-900 py-16 md:py-20">
+      <div className="bg-gray-200 py-6 md:py-8">
         <div className="container mx-auto px-4 max-w-3xl text-center">
-          <span className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/15 border border-orange-500/30 rounded-full text-orange-300 text-xs font-semibold uppercase tracking-wide mb-6">
+          <span className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/15 border border-orange-500/30 rounded-full text-orange-700 text-xs font-semibold uppercase tracking-wide mb-3">
             <Sparkles className="w-3.5 h-3.5" />
             Blog Article
           </span>
 
-          <h1 className="font-display text-2xl md:text-4xl font-semibold text-white leading-tight mb-4">
+          <h1 className="font-display text-2xl md:text-3xl font-semibold text-gray-900 leading-tight mb-2">
             {blog.title}
           </h1>
-          <p className="text-gray-300 text-base leading-relaxed">
+          <p className="text-gray-600 text-sm leading-relaxed">
             {blog.excerpt || "Explore our insightful articles that inspire change, spark conversations, and empower growth."}
           </p>
 
-          <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 mt-8 text-sm text-gray-400">
-            <div className="flex items-center gap-2">
-              <User className="w-4 h-4" />
-              <span>{blog.author?.first_name ? `${blog.author.first_name} ${blog.author.last_name}` : blog.author?.username || 'Unknown Author'}</span>
-            </div>
+          <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 mt-4 text-sm text-gray-500">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               <span>{formatDate(blog.published_date || blog.created_at)}</span>
             </div>
-            {blog.category && (
+            {blog.category_details && (
               <div className="flex items-center gap-2">
                 <Tag className="w-4 h-4" />
-                <span>{blog.category.name || blog.category}</span>
+                <span>{blog.category_details.name}</span>
               </div>
             )}
             <div className="flex items-center gap-2">
@@ -148,31 +144,6 @@ const BlogDetail = () => {
             dangerouslySetInnerHTML={{ __html: blog.content }}
           />
         </article>
-
-        {/* Additional Blog Information */}
-        <div className="mt-12 pt-8 border-t border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Published Information</h3>
-              <div className="space-y-2 text-sm text-gray-600">
-                <p><strong>Created:</strong> {formatDate(blog.created_at)}</p>
-                <p><strong>Last Updated:</strong> {formatDate(blog.updated_at)}</p>
-                {blog.published_date && (
-                  <p><strong>Published:</strong> {formatDate(blog.published_date)}</p>
-                )}
-              </div>
-            </div>
-
-            {blog.is_featured && (
-              <div className="bg-orange-50 p-6 rounded-lg">
-                <h3 className="text-lg font-semibold text-orange-800 mb-2">Featured Article</h3>
-                <p className="text-sm text-orange-600">
-                  This article is featured on our blog and represents some of our best content.
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Navigation */}
         <div className="mt-12 flex justify-center">

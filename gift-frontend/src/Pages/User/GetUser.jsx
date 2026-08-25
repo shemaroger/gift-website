@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Filter, ChevronLeft, ChevronRight, ChevronsLeft, Edit, ChevronsRight, Eye, Download, Check, X } from 'lucide-react';
-import { fetchUsers } from "../../api";
-import axios from 'axios';
+import { Search, Filter, ChevronLeft, ChevronRight, ChevronsLeft, Edit, ChevronsRight, Eye, Download, Check, X, Trash2 } from 'lucide-react';
+import { fetchUsers, deleteUser } from "../../api";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 
 const UserList = () => {
@@ -92,15 +93,20 @@ const UserList = () => {
 
   // Handle user deletion
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) {
+    if (!window.confirm('Are you sure you want to delete this user? This cannot be undone.')) {
       return;
     }
     try {
-      await axios.delete(`/api/users/${id}/`);
-      setUsers(users.filter(user => user.id !== id));
+      const result = await deleteUser(id);
+      if (result.success) {
+        setUsers(users.filter(user => user.id !== id));
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
     } catch (err) {
       console.error('Error deleting user:', err);
-      alert('Failed to delete user');
+      toast.error('Failed to delete user.');
     }
   };
 
@@ -173,7 +179,7 @@ const UserList = () => {
               <input
                 type="text"
                 placeholder="Search by name or email"
-                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -184,7 +190,7 @@ const UserList = () => {
             <div className="relative flex items-center">
               <Filter size={18} className="absolute left-3 text-gray-400" />
               <select
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
@@ -198,7 +204,7 @@ const UserList = () => {
             <div className="relative flex items-center">
               <Filter size={18} className="absolute left-3 text-gray-400" />
               <select
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
               >
@@ -210,7 +216,7 @@ const UserList = () => {
 
             <div className="flex items-center">
               <select
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 value={usersPerPage}
                 onChange={(e) => setUsersPerPage(Number(e.target.value))}
               >
@@ -292,6 +298,13 @@ const UserList = () => {
                       <Link to={`/dashboard/adduser/${user.id}`} className="text-orange-600 hover:text-orange-900 mr-4 flex justify-center items-center">
                         <Edit size={16} />
                       </Link>
+                      <button
+                        onClick={() => handleDelete(user.id)}
+                        className="text-orange-600 hover:text-orange-900 flex justify-center items-center"
+                        title="Delete user"
+                      >
+                        <Trash2 size={16} />
+                      </button>
 
                     </td>
                   </tr>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { fetchRole, updaterole, fetchUserById } from "../../api";
+import { Trash2 } from 'lucide-react';
+import { fetchRole, updaterole, fetchUserById, deleteRole } from "../../api";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -80,12 +80,17 @@ const RolesList = () => {
 
     const confirmDelete = async () => {
         try {
-            await axios.delete(`/api/roles/${selectedRoleId}/`);
+            const result = await deleteRole(selectedRoleId);
             setShowConfirmDelete(false);
-            fetchRoles();
+            if (result.success) {
+                toast.success(result.message);
+                fetchRoles();
+            } else {
+                toast.error(result.message || 'Failed to delete role. It may be assigned to users.');
+            }
         } catch (err) {
             console.error('Error deleting role:', err);
-            setError('Failed to delete role. It may be assigned to users.');
+            toast.error('Failed to delete role. It may be assigned to users.');
         }
     };
 
@@ -213,6 +218,9 @@ const RolesList = () => {
                                                         <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                                                     </svg>
                                                 </button>
+                                                <button onClick={() => handleDeleteClick(role.id)} className="text-orange-600 hover:text-orange-900" title="Delete role">
+                                                    <Trash2 size={16} className="inline-block" />
+                                                </button>
                                             </td>
                                         )}
                                     </tr>
@@ -250,6 +258,32 @@ const RolesList = () => {
                     </div>
                 </div>
             </div>
+
+            {showConfirmDelete && isSuperuser && (
+                <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+                    <div className="absolute inset-0 bg-gray-800 opacity-75"></div>
+                    <div className="bg-white rounded-lg w-[calc(100%-2rem)] sm:w-full max-w-md p-6 z-50">
+                        <h2 className="text-xl font-display font-bold mb-4">Delete Role</h2>
+                        <p className="text-gray-600 mb-6">
+                            Are you sure you want to delete this role? This cannot be undone.
+                        </p>
+                        <div className="flex justify-end">
+                            <button
+                                onClick={cancelDelete}
+                                className="px-4 py-2 mr-2 text-sm rounded-lg bg-orange-600 hover:bg-orange-700 text-white"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                className="px-4 py-2 text-sm rounded-lg bg-orange-600 hover:bg-orange-700 text-white"
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {isEditModalOpen && isSuperuser && (
                 <div className="fixed inset-0 flex items-center justify-center z-50 p-4">

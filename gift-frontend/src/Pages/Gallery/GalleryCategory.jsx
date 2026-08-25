@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, Plus, Edit, Search, ArrowLeft, Image, Video } from 'lucide-react';
+import { Save, Plus, Edit, Search, ArrowLeft, Image, Video, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { createGalleryCategory, fetchGalleryCategories, updateGalleryCategory } from "../../api";
+import { createGalleryCategory, fetchGalleryCategories, updateGalleryCategory, deleteGalleryCategory } from "../../api";
 
 export default function GalleryCategoryManagement() {
   const navigate = useNavigate();
@@ -118,15 +118,16 @@ export default function GalleryCategoryManagement() {
   };
 
   const handleDelete = async (categoryId) => {
-    if (window.confirm("Are you sure you want to delete this category?")) {
+    if (window.confirm("Are you sure you want to delete this category? This cannot be undone.")) {
       try {
         setLoading(true);
-        // Replace with your actual API call
-        // await deleteGalleryCategory(categoryId);
-
-        // Simulating delete behavior
-        setCategories(prev => prev.filter(cat => cat.id !== categoryId));
-        toast.success("Gallery category deleted successfully!");
+        const result = await deleteGalleryCategory(categoryId);
+        if (result.success) {
+          setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+          toast.success(result.message);
+        } else {
+          toast.error(result.message);
+        }
         setLoading(false);
       } catch (err) {
         console.error("Error deleting gallery category:", err);
@@ -204,7 +205,7 @@ export default function GalleryCategoryManagement() {
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                         placeholder="e.g. Landscape Photos"
                       />
                     </div>
@@ -217,7 +218,7 @@ export default function GalleryCategoryManagement() {
                         name="icon"
                         value={formData.icon}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                       >
                         <option value="">Select an icon</option>
                         {commonIcons.map(icon => (
@@ -320,13 +321,13 @@ export default function GalleryCategoryManagement() {
                             >
                               <Edit size={16} />
                             </button>
-                            {/* <button
+                            <button
                               onClick={() => handleDelete(category.id)}
-                              className="p-1 text-red-600 hover:text-red-800"
+                              className="p-1 text-orange-600 hover:text-orange-800"
                               title="Delete"
                             >
                               <Trash2 size={16} />
-                            </button> */}
+                            </button>
                           </div>
                         </div>
                       ))

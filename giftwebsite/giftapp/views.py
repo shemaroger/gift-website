@@ -26,6 +26,7 @@ from rest_framework.pagination import PageNumberPagination
 from PIL import Image
 from io import BytesIO
 from django.core.files.base import ContentFile
+import cloudinary.exceptions
 
 
 User = get_user_model()
@@ -66,6 +67,21 @@ class UserUpdateView(generics.UpdateAPIView):
             serializer.save()
             return Response({'message': 'User updated successfully', 'data': serializer.data}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def put(self, request, *args, **kwargs):
+        # Frontend sends PUT with partial data (not every field on every edit),
+        # so treat it the same as PATCH rather than DRF's default non-partial PUT.
+        return self.patch(request, *args, **kwargs)
+
+class UserDeleteView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, id):
+        """Soft delete instead of actual deletion, matching Role's pattern."""
+        user = get_object_or_404(User, id=id)
+        user.is_active = False
+        user.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = UserRegisterSerializer
@@ -407,6 +423,12 @@ class AdListCreateAPI(generics.ListCreateAPIView):
     serializer_class = AdSerializer
     permission_classes = [permissions.AllowAny]
 
+class AdDetailAPI(generics.RetrieveUpdateDestroyAPIView):
+    """Retrieve, update, or delete a single ad (admin only)"""
+    queryset = Ad.objects.all()
+    serializer_class = AdSerializer
+    permission_classes = [permissions.AllowAny]
+
 class ActiveAdsAPI(generics.ListAPIView):
     """Get currently active ads (public access)"""
     serializer_class = AdSerializer    
@@ -453,6 +475,16 @@ class EventDetailAPI(generics.RetrieveAPIView):
         serializer = self.get_serializer(event)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class EventByUuidAPI(APIView):
+    """Public detail lookup by uuid, so event URLs don't expose the
+    sequential integer id used internally by the admin dashboard."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, uuid):
+        event = get_object_or_404(Event, uuid=uuid)
+        serializer = EventSerializer(event, context={'request': request})
+        return Response(serializer.data)
+
 class EventListCreateAPI(generics.ListCreateAPIView):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
@@ -494,12 +526,14 @@ class EventListCreateAPI(generics.ListCreateAPIView):
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, request, *args, **kwargs):
+        event_id = kwargs.get('pk')
+        if not event_id:
+            return Response({'error': 'Event ID is required in URL.'}, status=status.HTTP_400_BAD_REQUEST)
+        event_instance = get_object_or_404(Event, id=event_id)
+        event_instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-class EventRetrieveUpdateDestroyAPI(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Event.objects.all()
-    serializer_class = EventSerializer
-    permission_classes = [permissions.IsAuthenticated]
 
 class EventRegistrationCreateAPI(generics.CreateAPIView):
     queryset = EventRegistration.objects.all()
@@ -517,12 +551,16 @@ class BlogPostListCreateAPIView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get(self, request):
-        posts = BlogPost.objects.filter(status='published').order_by('-published_date')
+        # Staff manage all posts (including drafts) from the admin list;
+        # everyone else only sees what's actually published.
+        if request.user.is_authenticated and request.user.is_staff:
+            posts = BlogPost.objects.all().order_by('-created_at')
+        else:
+            posts = BlogPost.objects.filter(status='published').order_by('-published_date')
         serializer = BlogPostSerializer(posts, many=True, context={'request': request})
         return Response(serializer.data)
 
     def post(self, request):
-        print("Received POST data:", request.data)
         if not request.user.is_staff:
             return Response(
                 {"error": "Only admin users can create blog posts"},
@@ -530,7 +568,13 @@ class BlogPostListCreateAPIView(APIView):
             )
         serializer = BlogPostSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
-            serializer.save(author=request.user)
+            try:
+                serializer.save(author=request.user)
+            except cloudinary.exceptions.Error as e:
+                return Response(
+                    {'error': f'Upload failed: the image was rejected by media storage ({e}). Please try again.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -555,7 +599,13 @@ class BlogPostRetrieveUpdateDestroyAPIView(APIView):
 
         serializer = BlogPostSerializer(post, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
-            serializer.save()
+            try:
+                serializer.save()
+            except cloudinary.exceptions.Error as e:
+                return Response(
+                    {'error': f'Upload failed: the image was rejected by media storage ({e}). Please try again.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -667,7 +717,12 @@ class BlogCategoryListAPIView(APIView):
 
         print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
+    def delete(self, request, id):
+        category = get_object_or_404(BlogCategory, id=id)
+        category.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 class BlogPostDetailAPIView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -675,7 +730,36 @@ class BlogPostDetailAPIView(APIView):
         post = get_object_or_404(BlogPost, pk=pk)
         serializer = BlogPostSerializer(post, context={'request': request})
         return Response(serializer.data)
-    
+
+    def put(self, request, pk):
+        post = get_object_or_404(BlogPost, pk=pk)
+        serializer = BlogPostSerializer(post, data=request.data, partial=True, context={'request': request})
+        if serializer.is_valid():
+            try:
+                serializer.save()
+            except cloudinary.exceptions.Error as e:
+                return Response(
+                    {'error': f'Upload failed: the image was rejected by media storage ({e}). Please try again.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        post = get_object_or_404(BlogPost, pk=pk)
+        post.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class BlogPostByUuidAPIView(APIView):
+    """Public detail lookup by uuid, so blog post URLs don't expose
+    the sequential integer id used internally by the admin dashboard."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request, uuid):
+        post = get_object_or_404(BlogPost, uuid=uuid, status='published')
+        serializer = BlogPostSerializer(post, context={'request': request})
+        return Response(serializer.data)
+
 class BlogPostsByCategoryAPIView(APIView):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
@@ -779,7 +863,13 @@ class GalleryItemListCreateAPI(APIView):
         if not files:
             serializer = GalleryItemCreateSerializer(data=request.data, context={'request': request})
             if serializer.is_valid():
-                item = serializer.save(uploaded_by=request.user)
+                try:
+                    item = serializer.save(uploaded_by=request.user)
+                except cloudinary.exceptions.Error as e:
+                    return Response(
+                        {'error': f'Upload failed: the file was rejected by media storage ({e}). It may be too large for a single upload.'},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
                 created_items.append(GalleryItemSerializer(item, context={'request': request}).data)
                 return Response(created_items, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -797,12 +887,19 @@ class GalleryItemListCreateAPI(APIView):
             
             serializer = GalleryItemCreateSerializer(data=data, context={'request': request})
             if serializer.is_valid():
-                item = serializer.save(uploaded_by=request.user)
-                
+                try:
+                    item = serializer.save(uploaded_by=request.user)
+                except cloudinary.exceptions.Error as e:
+                    errors.append({
+                        'file': file.name,
+                        'errors': {'error': f'Upload failed: rejected by media storage ({e}). It may be too large.'}
+                    })
+                    continue
+
                 # Generate thumbnail
                 if item.image:
                     self.generate_thumbnail(item)
-                
+
                 created_items.append(GalleryItemSerializer(item, context={'request': request}).data)
             else:
                 errors.append({
@@ -874,12 +971,18 @@ class GalleryItemDetailAPI(APIView):
         )
         
         if serializer.is_valid():
-            updated_item = serializer.save()
-            
+            try:
+                updated_item = serializer.save()
+            except cloudinary.exceptions.Error as e:
+                return Response(
+                    {'error': f'Upload failed: the file was rejected by media storage ({e}). It may be too large for a single upload.'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
             # Regenerate thumbnail if image changed
             if 'image' in request.data and updated_item.image:
                 self.generate_thumbnail(updated_item)
-            
+
             return Response(
                 GalleryItemSerializer(updated_item, context={'request': request}).data
             )
@@ -899,6 +1002,81 @@ class GalleryItemDetailAPI(APIView):
         
         item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class TestimonialListCreateAPI(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        testimonials = Testimonial.objects.all().order_by('-created_at')
+        serializer = TestimonialSerializer(testimonials, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = TestimonialCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            testimonial = serializer.save()
+            return Response(
+                TestimonialSerializer(testimonial, context={'request': request}).data,
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class TestimonialDetailAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self, pk):
+        try:
+            return Testimonial.objects.get(pk=pk)
+        except Testimonial.DoesNotExist:
+            return None
+
+    def get(self, request, pk):
+        testimonial = self.get_object(pk)
+        if not testimonial:
+            return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+        serializer = TestimonialSerializer(testimonial, context={'request': request})
+        return Response(serializer.data)
+
+    def put(self, request, pk):
+        testimonial = self.get_object(pk)
+        if not testimonial:
+            return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        serializer = TestimonialCreateSerializer(testimonial, data=request.data, partial=True)
+        if serializer.is_valid():
+            updated = serializer.save()
+            return Response(TestimonialSerializer(updated, context={'request': request}).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        testimonial = self.get_object(pk)
+        if not testimonial:
+            return Response({'error': 'Not found'}, status=status.HTTP_404_NOT_FOUND)
+        testimonial.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+class PublicTestimonialAPI(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        testimonials = Testimonial.objects.filter(is_active=True).order_by('-created_at')
+        category = request.query_params.get('category')
+        if category:
+            testimonials = testimonials.filter(categories__slug=category)
+        serializer = TestimonialSerializer(testimonials, many=True, context={'request': request})
+        return Response(serializer.data)
+
+    def post(self, request):
+        """Visitors can submit their own testimonial; it stays inactive
+        (hidden from the public list) until an admin reviews and activates it."""
+        serializer = PublicTestimonialCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(is_active=False)
+            return Response(
+                {'message': 'Thank you! Your testimonial has been submitted for review.'},
+                status=status.HTTP_201_CREATED
+            )
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class GalleryCategoryListAPI(APIView):
     permission_classes = [permissions.AllowAny]
@@ -944,6 +1122,11 @@ class GalleryCategoryListAPI(APIView):
 
         print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, id):
+        category = get_object_or_404(GalleryCategory, id=id)
+        category.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 class PublicGalleryAPI(APIView):
     def get(self, request):

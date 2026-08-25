@@ -8,6 +8,11 @@ import { fetchGalleryCategories, createGalleryItem } from '../../api';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+// Cloudinary rejects a single-request upload over this size with a 413 —
+// catch it client-side with a clear message instead of a failed network call.
+const MAX_VIDEO_SIZE_MB = 200;
+const MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024;
+
 export default function AddGalleryItem() {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
@@ -16,6 +21,8 @@ export default function AddGalleryItem() {
   const [mediaType, setMediaType] = useState('image');
   const [imageFile, setImageFile] = useState(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [videoSource, setVideoSource] = useState('upload'); // 'upload' | 'url'
+  const [videoFile, setVideoFile] = useState(null);
   const [videoUrl, setVideoUrl] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [categories, setCategories] = useState([]);
@@ -52,6 +59,28 @@ export default function AddGalleryItem() {
     }
   };
 
+  const handleVideoFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > MAX_VIDEO_SIZE_BYTES) {
+      const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+      setValidationErrors((prev) => ({
+        ...prev,
+        videoFile: `This file is ${sizeMB}MB — over the ${MAX_VIDEO_SIZE_MB}MB limit for a single upload. Try a smaller or compressed video, or use the "Use a URL instead" option.`,
+      }));
+      e.target.value = '';
+      setVideoFile(null);
+      return;
+    }
+
+    setValidationErrors((prev) => {
+      const { videoFile, ...rest } = prev;
+      return rest;
+    });
+    setVideoFile(file);
+  };
+
   const handleThumbnailChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -85,8 +114,17 @@ export default function AddGalleryItem() {
       errors.image = "Image file is required";
     }
 
-    if (mediaType === 'video' && !videoUrl.trim()) {
-      errors.videoUrl = "Video URL is required";
+    if (mediaType === 'video') {
+      if (videoSource === 'url' && !videoUrl.trim()) {
+        errors.videoUrl = "Video URL is required";
+      }
+      if (videoSource === 'upload') {
+        if (!videoFile) {
+          errors.videoFile = "Video file is required";
+        } else if (videoFile.size > MAX_VIDEO_SIZE_BYTES) {
+          errors.videoFile = `This file is over the ${MAX_VIDEO_SIZE_MB}MB limit for a single upload.`;
+        }
+      }
     }
 
     setValidationErrors(errors);
@@ -124,7 +162,11 @@ export default function AddGalleryItem() {
           formData.append('thumbnail', thumbnailFile);
         }
       } else if (mediaType === 'video') {
-        formData.append('video_url', videoUrl);
+        if (videoSource === 'upload') {
+          formData.append('video_file', videoFile);
+        } else {
+          formData.append('video_url', videoUrl);
+        }
         if (thumbnailFile) {
           formData.append('thumbnail', thumbnailFile);
         }
@@ -142,6 +184,8 @@ export default function AddGalleryItem() {
       setMediaType('image');
       setImageFile(null);
       setThumbnailFile(null);
+      setVideoSource('upload');
+      setVideoFile(null);
       setVideoUrl('');
       setImagePreview(null);
       setThumbnailPreview(null);
@@ -216,7 +260,7 @@ export default function AddGalleryItem() {
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${validationErrors.title ? 'border-red-500' : 'border-gray-300'
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${validationErrors.title ? 'border-red-500' : 'border-gray-300'
                     }`}
                   placeholder="Enter a title for your gallery item"
                 />
@@ -234,7 +278,7 @@ export default function AddGalleryItem() {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows="4"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   placeholder="Provide a description for your gallery item (optional)"
                 />
               </div>
@@ -270,7 +314,7 @@ export default function AddGalleryItem() {
                     <Film size={24} className={mediaType === 'video' ? 'text-orange-600' : 'text-gray-500'} />
                   </div>
                   <h3 className="text-center font-medium">Video</h3>
-                  <p className="text-center text-sm text-gray-500">Enter a video URL</p>
+                  <p className="text-center text-sm text-gray-500">Upload a file or enter a URL</p>
                 </div>
               </div>
             </div>
@@ -278,7 +322,7 @@ export default function AddGalleryItem() {
             {/* Media Upload Section */}
             <div className="mb-6">
               <h2 className="text-lg font-display font-medium text-gray-900 mb-4">
-                {mediaType === 'image' ? 'Upload Image' : 'Video URL'}
+                {mediaType === 'image' ? 'Upload Image' : 'Video'}
               </h2>
 
               {mediaType === 'image' ? (
@@ -339,24 +383,100 @@ export default function AddGalleryItem() {
                 </div>
               ) : (
                 <div className="mb-4">
-                  <label htmlFor="video-url" className="block text-sm font-medium text-gray-700 mb-1">
-                    Video URL <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="url"
-                    id="video-url"
-                    value={videoUrl}
-                    onChange={(e) => setVideoUrl(e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${validationErrors.videoUrl ? 'border-red-500' : 'border-gray-300'
-                      }`}
-                    placeholder="https://example.com/video.mp4"
-                  />
-                  {validationErrors.videoUrl && (
-                    <p className="mt-1 text-sm text-red-600">{validationErrors.videoUrl}</p>
+                  {/* Source toggle: upload a file vs paste a URL */}
+                  <div className="flex gap-2 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setVideoSource('upload')}
+                      className={`px-3 py-1.5 text-sm rounded-md border ${videoSource === 'upload'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700 font-medium'
+                        : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                        }`}
+                    >
+                      Upload a file
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVideoSource('url')}
+                      className={`px-3 py-1.5 text-sm rounded-md border ${videoSource === 'url'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700 font-medium'
+                        : 'border-gray-300 text-gray-600 hover:bg-gray-50'
+                        }`}
+                    >
+                      Use a URL instead
+                    </button>
+                  </div>
+
+                  {videoSource === 'upload' ? (
+                    <div>
+                      <div className={`border-2 border-dashed rounded-lg p-6 text-center ${validationErrors.videoFile
+                        ? 'border-red-300 bg-red-50'
+                        : videoFile
+                          ? 'border-green-300 bg-green-50'
+                          : 'border-gray-300 hover:border-orange-300 hover:bg-gray-50'
+                        }`}>
+                        {videoFile ? (
+                          <div className="flex items-center justify-center gap-3">
+                            <Film size={28} className="text-green-600 flex-shrink-0" />
+                            <span className="text-sm text-gray-700 truncate max-w-xs">{videoFile.name}</span>
+                            <button
+                              type="button"
+                              onClick={() => setVideoFile(null)}
+                              className="bg-gray-900 bg-opacity-50 text-white rounded-full p-1 hover:bg-opacity-70 flex-shrink-0"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <Upload className="mx-auto h-12 w-12 text-gray-400" />
+                            <div className="mt-2">
+                              <label htmlFor="video-upload" className="cursor-pointer">
+                                <span className="mt-2 block text-sm font-medium text-orange-600 hover:text-orange-500">
+                                  Click to upload a video
+                                </span>
+                                <input
+                                  id="video-upload"
+                                  name="video_file"
+                                  type="file"
+                                  accept="video/*"
+                                  className="sr-only"
+                                  onChange={handleVideoFileChange}
+                                />
+                              </label>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              MP4, WebM, MOV
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      {validationErrors.videoFile && (
+                        <p className="mt-1 text-sm text-red-600">{validationErrors.videoFile}</p>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <label htmlFor="video-url" className="block text-sm font-medium text-gray-700 mb-1">
+                        Video URL <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="url"
+                        id="video-url"
+                        value={videoUrl}
+                        onChange={(e) => setVideoUrl(e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 ${validationErrors.videoUrl ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        placeholder="https://example.com/video.mp4"
+                      />
+                      {validationErrors.videoUrl && (
+                        <p className="mt-1 text-sm text-red-600">{validationErrors.videoUrl}</p>
+                      )}
+                      <p className="mt-1 text-xs text-gray-500">
+                        Enter a direct video URL or embed URL from YouTube, Vimeo, etc.
+                      </p>
+                    </div>
                   )}
-                  <p className="mt-1 text-xs text-gray-500">
-                    Enter a direct video URL or embed URL from YouTube, Vimeo, etc.
-                  </p>
                 </div>
               )}
 

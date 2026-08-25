@@ -8,7 +8,9 @@ import {
   ToggleLeft, ToggleRight, Play, Save, AlertCircle
 } from 'lucide-react';
 
-import { fetchGalleryItems, fetchGalleryCategories } from "../../api";
+import { fetchGalleryItems, fetchGalleryCategories, deleteGalleryItem } from "../../api";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function GalleryManagement() {
   const navigate = useNavigate();
@@ -170,7 +172,10 @@ export default function GalleryManagement() {
   };
 
   const confirmDelete = (id) => {
-    setDeleteConfirmationId(id);
+    if (window.confirm('Are you sure you want to delete this gallery item? This cannot be undone.')) {
+      setDeleteConfirmationId(id);
+      handleDelete(id);
+    }
   };
 
   const cancelDelete = () => {
@@ -181,18 +186,26 @@ export default function GalleryManagement() {
   const handleDelete = async (id) => {
     try {
       setIsDeleting(true);
-      await deleteGalleryItem(id);
-      setAllItems(allItems.filter(item => item.id !== id));
-      setDeleteSuccess(true);
-      setDeleteConfirmationId(null);
+      const result = await deleteGalleryItem(id);
+      if (result.success) {
+        setAllItems(allItems.filter(item => item.id !== id));
+        setDeleteSuccess(true);
+        setDeleteConfirmationId(null);
+        toast.success(result.message);
+        closeViewModal();
 
-      // Reset success message after 3 seconds
-      setTimeout(() => {
-        setDeleteSuccess(false);
-      }, 3000);
+        // Reset success message after 3 seconds
+        setTimeout(() => {
+          setDeleteSuccess(false);
+        }, 3000);
+      } else {
+        setDeleteError(result.message);
+        toast.error(result.message);
+      }
     } catch (err) {
       console.error("Error deleting gallery item:", err);
       setDeleteError("Failed to delete item. Please try again.");
+      toast.error("Failed to delete item. Please try again.");
     } finally {
       setIsDeleting(false);
     }
@@ -394,7 +407,7 @@ export default function GalleryManagement() {
                   <input
                     type="text"
                     placeholder="Search gallery items by title..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -411,7 +424,7 @@ export default function GalleryManagement() {
 
             <div className="flex flex-wrap gap-2">
               <select
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 value={selectedCategory}
                 onChange={(e) => {
                   setSelectedCategory(e.target.value);
@@ -425,7 +438,7 @@ export default function GalleryManagement() {
               </select>
 
               <select
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 value={mediaTypeFilter}
                 onChange={(e) => {
                   setMediaTypeFilter(e.target.value);
@@ -438,7 +451,7 @@ export default function GalleryManagement() {
               </select>
 
               <select
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
@@ -452,7 +465,7 @@ export default function GalleryManagement() {
 
               <input
                 type="date"
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 value={dateFilter}
                 onChange={(e) => {
                   setDateFilter(e.target.value);
@@ -648,6 +661,14 @@ export default function GalleryManagement() {
                         >
                           <Eye size={16} />
                         </button>
+                        <button
+                          onClick={() => confirmDelete(item.id)}
+                          className="text-orange-600 hover:text-orange-900"
+                          title="Delete item"
+                          disabled={isDeleting}
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -692,7 +713,13 @@ export default function GalleryManagement() {
                   />
                 ) : (
                   <div className="w-full max-w-2xl aspect-video bg-black rounded-lg flex items-center justify-center">
-                    {selectedItem.video_url ? (
+                    {selectedItem.is_uploaded_video ? (
+                      <video
+                        src={selectedItem.media_url}
+                        controls
+                        className="w-full h-full rounded-lg"
+                      />
+                    ) : selectedItem.video_url ? (
                       <iframe
                         src={selectedItem.video_url}
                         title={selectedItem.title}
@@ -849,6 +876,13 @@ export default function GalleryManagement() {
               >
                 Close
               </button>
+              <button
+                onClick={() => confirmDelete(selectedItem.id)}
+                disabled={isDeleting}
+                className="px-4 py-2 text-sm rounded-lg bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-1 disabled:opacity-50"
+              >
+                <Trash2 size={14} /> {isDeleting ? 'Deleting...' : 'Delete'}
+              </button>
             </div>
           </div>
         </div>
@@ -877,7 +911,7 @@ export default function GalleryManagement() {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   placeholder="Enter category name"
                 />
               </div>
@@ -888,7 +922,7 @@ export default function GalleryManagement() {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   placeholder="enter-slug"
                 />
                 <p className="text-sm text-gray-500 mt-1">
@@ -902,7 +936,7 @@ export default function GalleryManagement() {
                 </label>
                 <input
                   type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   placeholder="Icon name (e.g. 'image', 'camera', 'film')"
                 />
                 <p className="text-sm text-gray-500 mt-1">

@@ -12,6 +12,7 @@ import logging
 from django.dispatch import receiver
 from django.db.models.signals import post_migrate, post_save
 from django.utils.text import slugify
+from .storage import LocalVideoStorage
 
 logger = logging.getLogger(__name__)
 
@@ -224,6 +225,7 @@ class AuthToken(models.Model):
     def __str__(self):
         return self.key
 class Ad(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True) 
     image = models.ImageField(upload_to='ads/', blank=True, null=True)
@@ -242,7 +244,7 @@ class Ad(models.Model):
     clicks = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return f"{self.title} - {self.placement}"
+        return self.title
 
     def is_currently_active(self):
         from django.utils import timezone
@@ -256,6 +258,7 @@ EVENT_TYPE_CHOICES = [
 ]
 
 class Event(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     title = models.CharField(max_length=200)
     description = models.TextField()
     event_type = models.CharField(max_length=10, choices=EVENT_TYPE_CHOICES, default='offline')
@@ -317,6 +320,7 @@ class BlogPost(models.Model):
         ('archived', 'Archived')
     ]
     
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     title = models.CharField(max_length=200)
     slug = models.SlugField(max_length=200, unique=True)
     author = models.ForeignKey(User, on_delete=models.PROTECT)
@@ -399,6 +403,7 @@ MEDIA_TYPE_CHOICES = [
 ]
 
 class GalleryItem(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
     categories = models.ManyToManyField(GalleryCategory, blank=True)
@@ -410,6 +415,12 @@ class GalleryItem(models.Model):
         null=True
     )
     video_url = models.URLField(blank=True, null=True)
+    video_file = models.FileField(
+        upload_to='gallery/videos/',
+        storage=LocalVideoStorage(),
+        blank=True,
+        null=True
+    )
     thumbnail = models.ImageField(
         upload_to='gallery/thumbnails/',
         blank=True,
@@ -422,7 +433,30 @@ class GalleryItem(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return self.title    
+        return self.title
+
+class Testimonial(models.Model):
+    """A quote/story from a person, optionally illustrated with an
+    already-uploaded gallery photo or video."""
+    uuid = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    name = models.CharField(max_length=200)
+    role = models.CharField(max_length=200, blank=True, null=True)
+    quote = models.TextField(blank=True, null=True)
+    gallery_item = models.ForeignKey(
+        GalleryItem,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='testimonials'
+    )
+    categories = models.ManyToManyField(GalleryCategory, blank=True)
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
 
 class Contact(models.Model):
     """Simple contact form submissions"""

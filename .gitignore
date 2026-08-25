@@ -2,3 +2,4 @@ giftwebsite/.env
 gift-frontend/.env
 *.pyc
 __pycache__/
+giftwebsite/media/

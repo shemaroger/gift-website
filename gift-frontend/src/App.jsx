@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import HomePage from './Pages/Home';
 import Footer from './Pages/Components/Footer';
 import Navbar from "./Pages/Components/navbar";
@@ -20,8 +21,10 @@ import AddRole from './Pages/Role/AddRole';
 import GetRole from './Pages/Role/GetRole';
 import AddAds from './Pages/Ads/AddAds';
 import GetAds from './Pages/Ads/GetAds';
+import EditAds from './Pages/Ads/EditAds';
 import AddBlog from './Pages/Blogs/AddBlog';
 import GetBlog from './Pages/Blogs/GetBlog';
+import EditBlog from './Pages/Blogs/EditBlog';
 import AddCategory from './Pages/Blogs/AddCategory';
 import AddEvent from './Pages/Events/AddEvent';
 import AddEventRegistration from './Pages/Events/AddEventRegistration';
@@ -29,6 +32,10 @@ import AddAnnouncement from './Pages/Announcements/AddAnnouncement';
 import GetGallery from './Pages/Gallery/GetGallery';
 import AddGallery from './Pages/Gallery/AddGallery';
 import GalleryCategory from './Pages/Gallery/GalleryCategory';
+import Testimonials from './Pages/Testimonials';
+import GetTestimonials from './Pages/Testimonials/GetTestimonials';
+import AddTestimonial from './Pages/Testimonials/AddTestimonial';
+import EditTestimonial from './Pages/Testimonials/EditTestimonial';
 import GetEvent from './Pages/Events/GetEvent';
 import AdminDashboard from './Pages/Admin/AdminDashboard';
 import ComingSoon from './Pages/Components/ComingSoon';
@@ -47,13 +54,19 @@ function ScrollToTop() {
   return null;
 }
 
-function App() {
-  const [count, setCount] = useState(0);
+function AnimatedRoutes() {
+  const location = useLocation();
 
   return (
-    <Router>
-      <ScrollToTop />
-      <Routes>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2, ease: 'easeInOut' }}
+      >
+        <Routes location={location}>
         {/* <Route path="/" element={<><ComingSoon /></>} /> */}
         <Route path="/" element={<><Navbar /> <HomePage /> <Footer /> </>} />
         <Route path="/contactus" element={<><Navbar /> <Contactus /> <Footer /> </>} />
@@ -63,6 +76,7 @@ function App() {
         <Route path="/Aboutus" element={<><Navbar /> <About /> <Footer /> </>} />
         <Route path="/Donate" element={<><Navbar /> <Donate /> <Footer /> </>} />
         <Route path="/Videos" element={<><Navbar /> <Videos /> <Footer /> </>} />
+        <Route path="/Testimonials" element={<><Navbar /> <Testimonials /> <Footer /> </>} />
         <Route path="/Events" element={<><Navbar /> <Events /> <Footer /> </>} />
         <Route path="/BlogDetail/:id" element={<><Navbar /> <BlogDetail /> <Footer /> </>} />
         <Route path="/autho/login" element={<> <Login /></>} />
@@ -78,14 +92,19 @@ function App() {
           <Route path="getRole" element={<GetRole />} />
           <Route path="addAds" element={<AddAds />} />
           <Route path="getAds" element={<GetAds />} />
+          <Route path="editAds/:id" element={<EditAds />} />
           <Route path="addBlog" element={<AddBlog />} />
           <Route path="getBlog" element={<GetBlog />} />
+          <Route path="editBlog/:id" element={<EditBlog />} />
           <Route path="addCategory" element={<AddCategory />} />
           <Route path="addEvent" element={<AddEvent />} />
           <Route path="addAnnouncement" element={<AddAnnouncement />} />
           <Route path="getGallery" element={<GetGallery />} />
           <Route path="addGallery" element={<AddGallery />} />
           <Route path="galleryCategory" element={<GalleryCategory />} />
+          <Route path="getTestimonials" element={<GetTestimonials />} />
+          <Route path="addTestimonial" element={<AddTestimonial />} />
+          <Route path="editTestimonial/:id" element={<EditTestimonial />} />
           <Route path="getEvent" element={<GetEvent />} />
           <Route path="adminDashboard" element={<AdminDashboard />} />
           <Route path="userDetails/:id" element={<UserDetails />} />
@@ -93,7 +112,19 @@ function App() {
           <Route path="viewContact" element={<ViewContact />} />
         </Route>
         <Route path="*" element={<NotFound />} />
-      </Routes>
+        </Routes>
+      </motion.div>
+    </AnimatePresence>
+  );
+}
+
+function App() {
+  const [count, setCount] = useState(0);
+
+  return (
+    <Router>
+      <ScrollToTop />
+      <AnimatedRoutes />
     </Router>
   );
 }

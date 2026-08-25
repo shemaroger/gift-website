@@ -18,11 +18,11 @@ const Aboutus = () => {
 
     return (
         <div className="mt-28 md:mt-32">
-            <div className="bg-green-900 py-16 md:py-20">
+            <div className="bg-gray-200 py-8 md:py-10">
                 <div className="container mx-auto px-4">
-                    <p className="text-orange-300 font-semibold text-sm uppercase tracking-wide mb-3 text-center">Who we are</p>
-                    <h1 className="font-display text-3xl md:text-5xl font-semibold text-white text-center mb-4">About GIfT</h1>
-                    <p className="text-green-50 text-center max-w-2xl mx-auto">
+                    <p className="text-orange-700 font-semibold text-sm uppercase tracking-wide mb-2 text-center">Who we are</p>
+                    <h1 className="font-display text-2xl md:text-4xl font-semibold text-gray-900 text-center mb-2">About GIfT</h1>
+                    <p className="text-gray-600 text-sm md:text-base text-center max-w-2xl mx-auto">
                         A Kicukiro-based Community Benefit Company turning fair trade sales into savings, training, and seed capital for local entrepreneurs.
                     </p>
                 </div>

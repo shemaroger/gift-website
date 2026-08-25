@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, Download, DollarSign, Calendar, User, X, Edit, CheckCircle, Phone, Mail, MessageSquare } from 'lucide-react';
-import { fetchDonations, updateDonationStatus } from '../../api';
+import { Search, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Eye, Download, DollarSign, Calendar, User, X, Edit, CheckCircle, Phone, Mail, MessageSquare, Trash2 } from 'lucide-react';
+import { fetchDonations, updateDonationStatus, deleteDonation } from '../../api';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -125,6 +125,26 @@ const EnhancedDonationView = () => {
             toast.error('Failed to update donation status.');
         } finally {
             setUpdatingStatus(false);
+        }
+    };
+
+    // Delete a donation
+    const handleDeleteDonation = async (id) => {
+        if (!window.confirm('Are you sure you want to delete this donation record? This cannot be undone.')) {
+            return;
+        }
+        try {
+            const result = await deleteDonation(id);
+            if (result.success) {
+                setDonations(prev => prev.filter(donation => donation.id !== id));
+                toast.success(result.message);
+                closeModals();
+            } else {
+                toast.error(result.message);
+            }
+        } catch (error) {
+            console.error('Error deleting donation:', error);
+            toast.error('Failed to delete donation.');
         }
     };
 
@@ -280,7 +300,7 @@ const EnhancedDonationView = () => {
                             <input
                                 type="text"
                                 placeholder="Search by name, email, or organization"
-                                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
@@ -291,7 +311,7 @@ const EnhancedDonationView = () => {
                         <div className="relative flex items-center">
                             <Filter size={18} className="absolute left-3 text-gray-400" />
                             <select
-                                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 value={typeFilter}
                                 onChange={(e) => setTypeFilter(e.target.value)}
                             >
@@ -307,7 +327,7 @@ const EnhancedDonationView = () => {
                         <div className="relative flex items-center">
                             <Filter size={18} className="absolute left-3 text-gray-400" />
                             <select
-                                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 value={statusFilter}
                                 onChange={(e) => setStatusFilter(e.target.value)}
                             >
@@ -322,7 +342,7 @@ const EnhancedDonationView = () => {
 
                         <div className="flex items-center">
                             <select
-                                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
                                 value={donationsPerPage}
                                 onChange={(e) => setDonationsPerPage(Number(e.target.value))}
                             >
@@ -440,6 +460,13 @@ const EnhancedDonationView = () => {
                                                 title="Update Status"
                                             >
                                                 <Edit size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteDonation(donation.id)}
+                                                className="text-orange-600 hover:text-orange-900 flex justify-center items-center"
+                                                title="Delete"
+                                            >
+                                                <Trash2 size={16} />
                                             </button>
                                         </td>
                                     </tr>
@@ -659,6 +686,12 @@ const EnhancedDonationView = () => {
                                         className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
                                     >
                                         Update Status
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteDonation(selectedDonation.id)}
+                                        className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 flex items-center gap-1"
+                                    >
+                                        <Trash2 size={14} /> Delete
                                     </button>
                                 </div>
                             </div>

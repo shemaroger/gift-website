@@ -7,6 +7,8 @@ import Feature from "../Pages/Components/Feature";
 import ScrollToTop from '../Pages/Components/ScrollToTop';
 import ImageSlider from '../Pages/Components/ImageSlider';
 import Features_info from "../Pages/Components/features_info";
+import Testimonials from "../Pages/Components/Testimonials";
+import Reveal from "../Pages/Components/Reveal";
 import { Link } from 'react-router-dom';
 
 export default function HomePage() {
@@ -82,7 +84,7 @@ export default function HomePage() {
             get involved. */}
         <div className="bg-white relative">
           {/* Who we are */}
-          <div className="container mx-auto px-4 py-16 md:py-24">
+          <Reveal className="container mx-auto px-4 py-16 md:py-24">
             <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
               {/* Images Section */}
               <div className="relative w-full lg:w-5/12">
@@ -124,10 +126,10 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-          </div>
+          </Reveal>
 
           {/* What we believe */}
-          <section className="py-16 md:py-24 bg-gray-50">
+          <Reveal className="py-16 md:py-24 bg-gray-50">
             <div className="container mx-auto px-4">
               <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
                 {/* Circular photo */}
@@ -188,13 +190,13 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-          </section>
+          </Reveal>
 
           {/* How we work */}
           <Features_info />
 
           {/* Four pillars — full summary graphic */}
-          <section className="container mx-auto px-4 pb-4 md:pb-6">
+          <Reveal className="container mx-auto px-4 pb-4 md:pb-6">
             <div className="max-w-2xl mx-auto text-center mb-8">
               <p className="text-orange-600 font-semibold text-sm uppercase tracking-wide mb-2">At a glance</p>
               <h2 className="font-display text-2xl md:text-3xl font-semibold text-gray-900">
@@ -206,10 +208,10 @@ export default function HomePage() {
               alt="Four pillars of the GIfT program: Community Savings Groups, Comprehensive Training Programs, Seed Money for Growth, and Weekly Volunteer Support, with key activities and outcomes for each"
               className="w-full max-w-3xl mx-auto"
             />
-          </section>
+          </Reveal>
 
           {/* Proof of impact */}
-          <section className="container mx-auto px-4 pt-8 md:pt-12 pb-16 md:pb-24">
+          <Reveal className="container mx-auto px-4 pt-8 md:pt-12 pb-16 md:pb-24">
             <div className="mb-16">
               <p className="text-orange-600 font-semibold text-sm uppercase tracking-wide mb-2">By the numbers</p>
               <h2 className="font-display text-3xl md:text-4xl font-semibold text-gray-900 mb-8 max-w-xl">
@@ -239,10 +241,10 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-          </section>
+          </Reveal>
 
           {/* Where the money goes */}
-          <div className="bg-gray-50 py-16 md:py-24">
+          <Reveal className="bg-gray-50 py-16 md:py-24">
             <div className="container mx-auto px-4">
               <div className="flex flex-col lg:flex-row items-center gap-12">
                 <div className="w-full lg:w-1/2">
@@ -288,11 +290,14 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
-          </div>
+          </Reveal>
 
           {/* Get involved: upcoming + recent events grouped together */}
           <Events />
           <Feature />
+
+          {/* Voices of impact */}
+          <Testimonials />
 
           {/* Read more */}
           <Blogs />

@@ -160,16 +160,16 @@ const Events = () => {
 
   return (
     <div className="bg-white mt-28 md:mt-32">
-      <div className="bg-slate-900 py-16 md:py-20">
+      <div className="bg-gray-200 py-8 md:py-10">
         <div className="container mx-auto px-4 max-w-3xl text-center">
-          <span className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/15 border border-orange-500/30 rounded-full text-orange-300 text-xs font-semibold uppercase tracking-wide mb-6">
+          <span className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/15 border border-orange-500/30 rounded-full text-orange-700 text-xs font-semibold uppercase tracking-wide mb-4">
             <Sparkles className="w-3.5 h-3.5" />
             Events
           </span>
-          <h1 className="font-display text-3xl md:text-5xl font-semibold text-white leading-tight mb-4">
+          <h1 className="font-display text-2xl md:text-4xl font-semibold text-gray-900 leading-tight mb-2">
             Where the community shows up
           </h1>
-          <p className="text-gray-300 text-base md:text-lg leading-relaxed">
+          <p className="text-gray-600 text-sm md:text-base leading-relaxed">
             Trainings, fundraisers, and gatherings — past and upcoming.
           </p>
         </div>
@@ -229,7 +229,7 @@ const Events = () => {
 
                       <button
                         className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-700 transition-colors"
-                        onClick={() => handleReadMore(event.id)}
+                        onClick={() => handleReadMore(event.uuid)}
                       >
                         Read More
                       </button>
@@ -311,7 +311,7 @@ const Events = () => {
               return (
                 <EventCard
                   key={event.id}
-                  id={event.id}
+                  id={event.uuid}
                   day={day}
                   month={month}
                   title={event.title}

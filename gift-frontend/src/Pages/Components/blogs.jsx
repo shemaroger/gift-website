@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { fetchblogs } from "../../publicApi";
 import { Calendar, ArrowRight } from "lucide-react";
 
-const EventCard = ({ id, featured_image, category_details, title, content, created_at }) => (
+const EventCard = ({ uuid, featured_image, category_details, title, content, created_at }) => (
   <div className="bg-white border border-gray-100 rounded-lg overflow-hidden flex flex-col h-full">
     <img
       src={featured_image}
@@ -32,7 +32,7 @@ const EventCard = ({ id, featured_image, category_details, title, content, creat
         </div>
       )}
       <Link
-        to={`/BlogDetail/${id}`}
+        to={`/BlogDetail/${uuid}`}
         className="inline-flex items-center gap-1 text-orange-600 font-medium text-sm hover:text-orange-700 transition-colors"
       >
         Read More <ArrowRight className="w-3.5 h-3.5" />

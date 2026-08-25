@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Save, Image, X, Calendar, Tag, ArrowLeft, Clock, Star, Check, Plus } from 'lucide-react';
-import { fetchCategory, createblogs } from "../../api";
-import { toast, } from 'react-toastify';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Save, Image, X, Tag, ArrowLeft, Clock, Star } from 'lucide-react';
+import { fetchCategory, fetchblogById, updateblog } from "../../api";
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-export default function AddBlog() {
+export default function EditBlog() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     title: '',
     slug: '',
@@ -17,13 +20,15 @@ export default function AddBlog() {
     is_featured: false
   });
 
-  const [categories, setCategories] = useState([])
+  const [categories, setCategories] = useState([]);
+  const [existingImageUrl, setExistingImageUrl] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [slugGenerated, setSlugGenerated] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadError, setLoadError] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const getCategories = async () => {
     try {
-
       const result = await fetchCategory();
       if (Array.isArray(result.data) && result.data.every(cat => cat.name)) {
         setCategories(result.data);
@@ -36,19 +41,29 @@ export default function AddBlog() {
   };
 
   useEffect(() => {
-    getCategories();
-  }, []);
-
-
-  useEffect(() => {
-    if (formData.title && !slugGenerated) {
-      const generatedSlug = formData.title
-        .toLowerCase()
-        .replace(/[^\w\s]/gi, '')
-        .replace(/\s+/g, '-');
-      setFormData(prev => ({ ...prev, slug: generatedSlug }));
-    }
-  }, [formData.title, slugGenerated]);
+    const load = async () => {
+      getCategories();
+      const result = await fetchblogById(id);
+      if (result.success) {
+        const post = result.data;
+        setFormData({
+          title: post.title || '',
+          slug: post.slug || '',
+          category: post.category?.id || post.category || '',
+          content: post.content || '',
+          excerpt: post.excerpt || '',
+          featured_image: null,
+          status: post.status || 'draft',
+          is_featured: post.is_featured || false
+        });
+        setExistingImageUrl(post.featured_image || null);
+      } else {
+        setLoadError(result.message);
+      }
+      setInitialLoading(false);
+    };
+    load();
+  }, [id]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -56,10 +71,6 @@ export default function AddBlog() {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-
-    if (name === 'slug') {
-      setSlugGenerated(true);
-    }
   };
 
   const handleImageChange = (e) => {
@@ -75,48 +86,55 @@ export default function AddBlog() {
   };
 
   const handleSubmit = async () => {
-    console.log("Subbmuted data", formData);
+    setIsSubmitting(true);
     try {
-      const response = await createblogs(formData)
-      if (response.success) {
-        toast.success("Blog post created successfully!");
-        setFormData({
-          title: '',
-          slug: '',
-          category: '',
-          content: '',
-          excerpt: '',
-          featured_image: null,
-          status: 'draft',
-          is_featured: false
-        });
-        setImagePreview(null);
-        setSlugGenerated(false);
-      } else {
-        toast.error("Error creating blog post");
-      }
+      const payload = { ...formData };
+      if (!payload.featured_image) delete payload.featured_image;
 
+      const response = await updateblog(id, payload);
+      if (response.success) {
+        toast.success("Blog post updated successfully!");
+        navigate('/dashboard/getblog');
+      } else {
+        toast.error(response.message || "Error updating blog post");
+      }
     } catch (error) {
-      console.error("Error creating blog post:", error);
-      toast.error("Error creating blog post");
+      console.error("Error updating blog post:", error);
+      toast.error("Error updating blog post");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
+  if (initialLoading) {
+    return (
+      <div className="bg-gray-50 max-w-7xl mx-auto min-h-screen py-8 text-center text-gray-500">
+        Loading blog post...
+      </div>
+    );
+  }
 
+  if (loadError) {
+    return (
+      <div className="bg-gray-50 max-w-7xl mx-auto min-h-screen py-8">
+        <div className="bg-red-50 p-4 rounded-lg text-red-700">{loadError}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-50 max-w-7xl mx-auto min-h-screen py-8">
       <div className="mb-6  mx-auto">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold font-display">Blog Management</h1>
+          <h1 className="text-2xl font-bold font-display">Edit Blog Post</h1>
           <div className="flex space-x-2">
             <Link to="/dashboard/getblog" className="px-4 py-2 text-sm rounded-lg bg-orange-600 hover:bg-orange-700 text-white flex items-center">
-              <ArrowLeft size={16} className="mr-1" /> Back Posts
+              <ArrowLeft size={16} className="mr-1" /> Back to Posts
             </Link>
           </div>
         </div>
         <p className="mt-2 text-gray-600">
-          Manage your blog posts, track engagement, and optimize content strategy
+          Update this post's content and publishing settings
         </p>
       </div>
       <div className="max-w-7xl mx-auto bg-white rounded-lg border border-gray-100 overflow-hidden">
@@ -152,11 +170,7 @@ export default function AddBlog() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   placeholder="post-url-slug"
                 />
-                <p className="mt-1 text-xs text-gray-500">
-                  Auto-generated from title. You can edit if needed.
-                </p>
               </div>
-
 
               <div>
                 <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-1">
@@ -269,10 +283,10 @@ export default function AddBlog() {
                 </label>
 
                 <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
-                  {imagePreview ? (
+                  {imagePreview || existingImageUrl ? (
                     <div className="w-full relative">
                       <img
-                        src={imagePreview}
+                        src={imagePreview || existingImageUrl}
                         alt="Preview"
                         className="mx-auto h-40 object-cover rounded"
                       />
@@ -280,6 +294,7 @@ export default function AddBlog() {
                         type="button"
                         onClick={() => {
                           setImagePreview(null);
+                          setExistingImageUrl(null);
                           setFormData(prev => ({ ...prev, featured_image: null }));
                         }}
                         className="absolute top-0 right-0 bg-orange-600 text-white p-1 rounded-full"
@@ -325,9 +340,10 @@ export default function AddBlog() {
             <button
               type="button"
               onClick={handleSubmit}
-              className="flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              disabled={isSubmitting}
+              className="flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-60"
             >
-              <Save size={16} className="mr-2" /> Save Post
+              <Save size={16} className="mr-2" /> {isSubmitting ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </div>

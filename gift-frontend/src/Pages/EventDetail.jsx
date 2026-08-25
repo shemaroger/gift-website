@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Calendar, Globe, Share2, Users, Tag, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Eventbyid, fetchEvents } from "../publicApi";
+import { eventByUuid, fetchEvents } from "../publicApi";
 
 const EventCard = ({ id, day, month, title, image }) => {
     const navigate = useNavigate();
@@ -46,7 +46,7 @@ const EventDetails = () => {
             try {
                 // Fetch the specific event by id
                 if (id) {
-                    const eventResponse = await Eventbyid(id);
+                    const eventResponse = await eventByUuid(id);
                     if (eventResponse.success) {
                         setEvent(eventResponse.data);
                     } else {
@@ -69,7 +69,7 @@ const EventDetails = () => {
                                 eventDate <= oneMonthLater &&
                                 eventItem.is_active &&
                                 eventItem.is_public &&
-                                eventItem.id !== id
+                                eventItem.uuid !== id
                             );
                         })
                         .slice(0, 3); // Only take 3 events for display
@@ -429,7 +429,7 @@ const EventDetails = () => {
                                 return (
                                     <EventCard
                                         key={upcomingEvent.id}
-                                        id={upcomingEvent.id}
+                                        id={upcomingEvent.uuid}
                                         day={day}
                                         month={month}
                                         title={upcomingEvent.title}

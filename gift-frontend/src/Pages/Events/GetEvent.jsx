@@ -28,8 +28,9 @@ import {
   ExternalLink,
   Info,
   AlertTriangle,
+  Trash2,
 } from "lucide-react";
-import { fetchEvents, updateEvent } from "../../api";
+import { fetchEvents, updateEvent, deleteEvent } from "../../api";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -267,6 +268,26 @@ const EventsDisplay = () => {
     }
   };
 
+  const handleDeleteEvent = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this event? This cannot be undone.")) {
+      return;
+    }
+    try {
+      const result = await deleteEvent(id);
+      if (result.success) {
+        toast.success(result.message);
+        if (selectedEvent?.id === id) {
+          closeEventModal();
+        }
+        fetchData();
+      } else {
+        toast.error(result.message || "Failed to delete event");
+      }
+    } catch (error) {
+      toast.error("Error deleting event: " + error.message);
+    }
+  };
+
   // Calculate remaining spots for an event
   const getRemainingSpots = (event) => {
     if (!event) return 0;
@@ -466,7 +487,7 @@ const EventsDisplay = () => {
                   setSearchTerm(e.target.value);
                   setCurrentPage(1);
                 }}
-                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:ring-orange-500 focus:border-orange-500"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               />
             </div>
 
@@ -477,7 +498,7 @@ const EventsDisplay = () => {
                 onChange={(e) =>
                   handleFilterChange("eventType", e.target.value)
                 }
-                className="block w-full border border-gray-300 rounded-lg py-2 px-3 bg-white focus:ring-orange-500 focus:border-orange-500"
+                className="block w-full border border-gray-300 rounded-lg py-2 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               >
                 <option value="all">All Types</option>
                 <option value="online">Online</option>
@@ -491,7 +512,7 @@ const EventsDisplay = () => {
               <select
                 value={filters.isActive}
                 onChange={(e) => handleFilterChange("isActive", e.target.value)}
-                className="block w-full border border-gray-300 rounded-lg py-2 px-3 bg-white focus:ring-orange-500 focus:border-orange-500"
+                className="block w-full border border-gray-300 rounded-lg py-2 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               >
                 <option value="all">All Status</option>
                 <option value="active">Active</option>
@@ -506,7 +527,7 @@ const EventsDisplay = () => {
                 onChange={(e) =>
                   handleFilterChange("dateRange", e.target.value)
                 }
-                className="block w-full border border-gray-300 rounded-lg py-2 px-3 bg-white focus:ring-orange-500 focus:border-orange-500"
+                className="block w-full border border-gray-300 rounded-lg py-2 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               >
                 <option value="all">All Dates</option>
                 <option value="today">Today</option>
@@ -762,6 +783,15 @@ const EventsDisplay = () => {
                             <CheckCircle className="h-3 w-3 mr-1" />
                             Update
                           </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteEvent(event.id);
+                            }}
+                            className="flex items-center text-orange-600 hover:text-orange-800"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -943,6 +973,13 @@ const EventsDisplay = () => {
                     <CheckCircle className="h-3 w-3 mr-1" />
                     Update Status
                   </button>
+                  <button
+                    onClick={() => handleDeleteEvent(selectedEvent.id)}
+                    className="flex px-4 py-2 items-center bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Delete
+                  </button>
                 </div>
               </div>
             </div>
@@ -974,7 +1011,7 @@ const EventsDisplay = () => {
                       is_active: e.target.value === "true",
                     })
                   }
-                  className="block w-full border border-gray-300 rounded-lg py-2 px-3 bg-white focus:ring-orange-500 focus:border-orange-500"
+                  className="block w-full border border-gray-300 rounded-lg py-2 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 >
                   <option value={true}>Active</option>
                   <option value={false}>Inactive</option>

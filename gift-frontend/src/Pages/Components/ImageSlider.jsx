@@ -87,7 +87,7 @@ const ImageSlider = () => {
   // Show error or no ads message
   if (error || ads.length === 0) {
     return (
-      <div className="flex justify-center items-center h-96 bg-gray-100 rounded-lg mt-44">
+      <div className="flex justify-center items-center h-[calc(100vh-7rem)] md:h-[calc(100vh-8rem)] min-h-[420px] bg-gray-100 rounded-lg mt-28 md:mt-32">
         <div className="flex flex-col items-center space-y-4">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600"></div>
           <div className="text-gray-600 text-lg">Loading content...</div>
@@ -99,8 +99,8 @@ const ImageSlider = () => {
   const currentAd = ads[currentSlide];
 
   return (
-    <div className="relative w-full rounded-lg shadow-2xl mt-44 overflow-hidden">
-      <div className="relative">
+    <div className="relative w-full h-[calc(100vh-7rem)] md:h-[calc(100vh-8rem)] min-h-[420px] rounded-lg border border-gray-100 mt-28 md:mt-32 overflow-hidden">
+      <div className="relative h-full">
         {/* Image loading overlay */}
         {imageLoading && (
           <div className="absolute inset-0 flex justify-center items-center bg-gray-100 rounded-lg z-10">
@@ -116,7 +116,7 @@ const ImageSlider = () => {
             key={currentSlide}
             src={currentAd.image || "/api/placeholder/1200/800"}
             alt={currentAd.title}
-            className="w-full object-cover rounded-lg"
+            className="w-full h-full object-cover rounded-lg"
             initial={{ clipPath: "circle(0% at 50% 50%)" }}
             animate={{ clipPath: "circle(100% at 50% 50%)" }}
             exit={{ clipPath: "circle(0% at 50% 50%)" }}
@@ -127,16 +127,14 @@ const ImageSlider = () => {
           />
         </AnimatePresence>
 
-        <div className="absolute inset-0 bg-black bg-opacity-40 rounded-lg"></div>
-
-        <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 sm:space-x-3">
+        <div className="absolute bottom-4 sm:bottom-6 left-1/2 transform -translate-x-1/2 flex items-center gap-2 sm:gap-3 bg-black/40 px-3 py-2 rounded-full">
           {ads.map((_, index) => (
             <button
               key={index}
               onClick={() => handleDotClick(index)}
               className={`w-3 h-3 sm:w-4 sm:h-4 rounded-full transition-all duration-300 ${currentSlide === index
-                ? "bg-orange-600 scale-125 shadow-lg"
-                : "bg-white bg-opacity-60 hover:bg-opacity-80"
+                ? "bg-orange-600 scale-125"
+                : "bg-white bg-opacity-70 hover:bg-opacity-90"
                 }`}
               aria-label={`Go to slide ${index + 1}`}
             />

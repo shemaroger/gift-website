@@ -34,7 +34,7 @@ const StatusUpdateModal = ({ event, isOpen, onClose, onUpdate }) => {
             <select
               value={isActive}
               onChange={(e) => setIsActive(e.target.value === 'true')}
-              className="block w-full border border-gray-300 rounded-lg py-2 px-3 bg-white focus:ring-orange-500 focus:border-orange-500"
+              className="block w-full border border-gray-300 rounded-lg py-2 px-3 bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
             >
               <option value={true}>Active</option>
               <option value={false}>Inactive</option>

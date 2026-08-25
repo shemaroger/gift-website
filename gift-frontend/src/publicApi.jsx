@@ -87,6 +87,21 @@ export const fetchblogById = async (pk) => {
     }
 };
 
+export const fetchblogByUuid = async (postUuid) => {
+    try {
+        const response = await api.get(`/posts/uuid/${postUuid}/`);
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: error.response?.data?.detail || "Error fetching blog post.",
+        };
+    }
+};
+
 
 
 export const fetchCategory = async () => {
@@ -107,6 +122,21 @@ export const fetchCategory = async () => {
 export const Eventbyid = async (id) => {
     try {
         const response = await api.get(`/events_detail/${id}/`);
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: error.response?.data?.detail || "An error occurred while displaying the Events.",
+        };
+    }
+};
+
+export const eventByUuid = async (eventUuid) => {
+    try {
+        const response = await api.get(`/events_detail/uuid/${eventUuid}/`);
         return {
             success: true,
             data: response.data,
@@ -147,6 +177,38 @@ export const fetchGalleryItems = async () => {
             success: false,
             message:
                 error.response?.data?.detail || "Error fetching gallery-categories.",
+        };
+    }
+};
+
+export const fetchTestimonials = async () => {
+    try {
+        const response = await api.get("/testimonials/public/");
+        return {
+            success: true,
+            data: response.data,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message:
+                error.response?.data?.detail || "Error fetching testimonials.",
+        };
+    }
+};
+
+export const submitTestimonial = async (testimonialData) => {
+    try {
+        const response = await api.post("/testimonials/public/", testimonialData);
+        return {
+            success: true,
+            message: response.data?.message || "Thank you! Your testimonial has been submitted for review.",
+        };
+    } catch (error) {
+        return {
+            success: false,
+            message: error.response?.data?.detail || "Error submitting testimonial.",
+            errors: error.response?.data,
         };
     }
 };

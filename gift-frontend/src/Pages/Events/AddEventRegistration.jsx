@@ -133,7 +133,7 @@ export default function ModelFormInterface() {
                     name="event"
                     value={eventRegistration.event}
                     onChange={handleEventRegistrationChange}
-                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                     required
                   >
                     <option value="">Select an event</option>
@@ -154,7 +154,7 @@ export default function ModelFormInterface() {
                     name="full_name"
                     value={eventRegistration.full_name}
                     onChange={handleEventRegistrationChange}
-                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                     required
                   />
                 </div>
@@ -168,7 +168,7 @@ export default function ModelFormInterface() {
                     name="email"
                     value={eventRegistration.email}
                     onChange={handleEventRegistrationChange}
-                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                     required
                   />
                 </div>
@@ -182,7 +182,7 @@ export default function ModelFormInterface() {
                     name="phone"
                     value={eventRegistration.phone}
                     onChange={handleEventRegistrationChange}
-                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   />
                 </div>
                 
@@ -195,7 +195,7 @@ export default function ModelFormInterface() {
                     name="organization"
                     value={eventRegistration.organization}
                     onChange={handleEventRegistrationChange}
-                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   />
                 </div>
               </div>
@@ -223,7 +223,7 @@ export default function ModelFormInterface() {
                     name="name"
                     value={blogCategory.name}
                     onChange={handleBlogCategoryChange}
-                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                     required
                   />
                 </div>
@@ -235,7 +235,7 @@ export default function ModelFormInterface() {
                     name="slug"
                     value={blogCategory.slug}
                     onChange={handleBlogCategoryChange}
-                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
+                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-gray-50"
                     required
                   />
                   <p className="text-sm text-gray-500 mt-1">URL-friendly version of the name</p>
@@ -249,7 +249,7 @@ export default function ModelFormInterface() {
                     value={blogCategory.icon}
                     onChange={handleBlogCategoryChange}
                     placeholder="fa-tag, fa-folder, etc."
-                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full border border-gray-300 rounded-md shadow-sm p-2 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                   />
                   <p className="text-sm text-gray-500 mt-1">Font Awesome icon name or other icon identifier</p>
                 </div>

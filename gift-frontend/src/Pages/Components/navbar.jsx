@@ -6,19 +6,22 @@ import {
   Calendar,
   Camera,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   FileText,
   Gift,
   Heart,
   Image as ImageIcon,
+  Instagram,
   LogIn,
+  Mail,
+  MapPin,
   Megaphone,
   MessageCircle,
   MessageSquare,
   Menu,
+  Phone,
   Target,
+  Twitter,
   Users,
   Video,
   VolumeX,
@@ -61,12 +64,12 @@ const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState(null);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isContactOpen, setIsContactOpen] = useState(false);
   const desktopNavRef = useRef(null);
 
   const [announcements, setAnnouncements] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
@@ -121,14 +124,6 @@ const Navbar = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (announcements.length <= 1 || isPaused) return;
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev === announcements.length - 1 ? 0 : prev + 1));
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [announcements.length, isPaused]);
-
   const closeMenu = () => {
     setIsOpen(false);
     setOpenDropdown(null);
@@ -136,64 +131,70 @@ const Navbar = () => {
 
   const toggleDropdown = (key) => setOpenDropdown((prev) => (prev === key ? null : key));
 
-  const nextAnnouncement = () =>
-    setCurrentIndex((prev) => (prev === announcements.length - 1 ? 0 : prev + 1));
-  const prevAnnouncement = () =>
-    setCurrentIndex((prev) => (prev === 0 ? announcements.length - 1 : prev - 1));
-
-  const renderAnnouncementBody = () => {
-    const current = announcements[currentIndex];
-    return (
-      <span className="flex items-center gap-2 truncate">
-        <span className="inline-flex items-center gap-1 font-semibold text-orange-300 flex-shrink-0">
-          <Megaphone className="w-3.5 h-3.5" /> Announcement
-        </span>
-        <span className="truncate">{current.title}: {current.message}</span>
-      </span>
-    );
-  };
-
   const hasAnnouncements = !loading && !error && announcements.length > 0;
+
+  const tickerText = announcements
+    .map((a) => `${a.title}: ${a.message}`)
+    .join('   •   ');
 
   return (
     <div className="relative">
-      {/* Announcement strip — hidden entirely when there's no active announcement */}
+      {/* Announcement strip — a continuously scrolling ticker, hidden entirely when there's no active announcement */}
       {hasAnnouncements && (
-        <div className="fixed top-0 left-0 z-50 w-full bg-slate-900 text-white text-sm">
-          <div className="px-4 lg:px-8 py-2.5 flex items-center justify-center gap-3">
-            {announcements.length > 1 && (
+        <div className="fixed top-0 left-0 z-50 w-full bg-green-900 text-white text-sm overflow-hidden">
+          <div className="px-4 lg:px-8 py-2 flex items-center gap-4">
+            <span className="hidden sm:inline-flex items-center gap-1 font-semibold text-orange-300 flex-shrink-0">
+              <Megaphone className="w-3.5 h-3.5" /> Announcement
+            </span>
+
+            <div className="flex-1 min-w-0 overflow-hidden">
+              <div
+                className="flex whitespace-nowrap w-max animate-marquee"
+                style={{ animationPlayState: isPaused ? 'paused' : 'running' }}
+              >
+                <span className="pr-16">{tickerText}</span>
+                <span className="pr-16" aria-hidden="true">{tickerText}</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setIsPaused((prev) => !prev)}
+              aria-label={isPaused ? 'Resume scrolling' : 'Pause scrolling'}
+              className="p-1 rounded-full hover:bg-white/10 transition-colors flex-shrink-0"
+            >
+              {isPaused ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+            </button>
+
+            {/* Social + CTA, mirroring a standard utility-bar layout */}
+            <div className="hidden md:flex items-center gap-3 flex-shrink-0 pl-3 border-l border-white/15">
+              <a
+                href="https://x.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="X (Twitter)"
+                className="text-white/70 hover:text-white transition-colors"
+              >
+                <Twitter className="w-3.5 h-3.5" />
+              </a>
+              <a
+                href="https://instagram.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className="text-white/70 hover:text-white transition-colors"
+              >
+                <Instagram className="w-3.5 h-3.5" />
+              </a>
+
               <button
                 type="button"
-                onClick={prevAnnouncement}
-                aria-label="Previous announcement"
-                className="p-1 rounded-full hover:bg-white/10 transition-colors flex-shrink-0"
+                onClick={() => setIsContactOpen(true)}
+                className="ml-1 px-3 py-1 rounded-full border border-white/30 text-xs font-medium hover:bg-white/10 transition-colors"
               >
-                <ChevronLeft className="w-3.5 h-3.5" />
+                Get in Touch
               </button>
-            )}
-
-            <div className="max-w-2xl min-w-0 text-center">{renderAnnouncementBody()}</div>
-
-            {announcements.length > 1 && (
-              <>
-                <button
-                  type="button"
-                  onClick={nextAnnouncement}
-                  aria-label="Next announcement"
-                  className="p-1 rounded-full hover:bg-white/10 transition-colors flex-shrink-0"
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsPaused((prev) => !prev)}
-                  aria-label={isPaused ? 'Resume auto-scroll' : 'Pause auto-scroll'}
-                  className="p-1 rounded-full hover:bg-white/10 transition-colors flex-shrink-0"
-                >
-                  {isPaused ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
-                </button>
-              </>
-            )}
+            </div>
           </div>
         </div>
       )}
@@ -217,16 +218,26 @@ const Navbar = () => {
               </div>
             </Link>
 
-            {/* Mobile toggle */}
-            <button
-              type="button"
-              onClick={() => setIsOpen((prev) => !prev)}
-              aria-label={isOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={isOpen}
-              className="lg:hidden p-2.5 rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors"
-            >
-              {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+            {/* Mobile: Get in Touch + menu toggle */}
+            <div className="flex items-center gap-2 lg:hidden">
+              <button
+                type="button"
+                onClick={() => setIsContactOpen(true)}
+                aria-label="Get in touch"
+                className="p-2.5 rounded-lg border border-gray-200 text-gray-700 hover:text-orange-600 hover:border-orange-200 transition-colors"
+              >
+                <Phone className="w-5 h-5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsOpen((prev) => !prev)}
+                aria-label={isOpen ? 'Close menu' : 'Open menu'}
+                aria-expanded={isOpen}
+                className="p-2.5 rounded-lg bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+              >
+                {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
+            </div>
 
             {/* Desktop menu */}
             <div className="hidden lg:flex items-center gap-1" ref={desktopNavRef}>
@@ -383,6 +394,99 @@ const Navbar = () => {
           </div>
         </div>
       </nav>
+
+      {/* Get in Touch modal */}
+      {isContactOpen && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 px-4"
+          onClick={() => setIsContactOpen(false)}
+        >
+          <div
+            className="bg-white rounded-lg border border-gray-100 w-full max-w-sm overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header band */}
+            <div className="relative bg-green-900 px-6 pt-6 pb-8">
+              <button
+                type="button"
+                onClick={() => setIsContactOpen(false)}
+                aria-label="Close"
+                className="absolute top-4 right-4 p-1.5 rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <p className="text-orange-300 font-semibold text-xs uppercase tracking-wide mb-1">
+                Ganza-Inema Fair Trade
+              </p>
+              <h3 className="font-display text-2xl font-semibold text-white">Get in Touch</h3>
+            </div>
+
+            {/* Contact rows */}
+            <div className="px-6 -mt-4 pb-2 space-y-2">
+              <div className="flex items-center gap-3 bg-white border border-gray-100 rounded-lg px-4 py-3">
+                <span className="w-9 h-9 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
+                  <MapPin className="w-4 h-4 text-orange-600" />
+                </span>
+                <div>
+                  <p className="text-xs text-gray-500">Location</p>
+                  <p className="text-sm font-medium text-gray-900">Kigali, Rwanda</p>
+                </div>
+              </div>
+
+              <a
+                href="tel:+250781546413"
+                className="flex items-center gap-3 bg-white border border-gray-100 hover:border-orange-200 rounded-lg px-4 py-3 transition-colors"
+              >
+                <span className="w-9 h-9 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
+                  <Phone className="w-4 h-4 text-orange-600" />
+                </span>
+                <div>
+                  <p className="text-xs text-gray-500">Call us</p>
+                  <p className="text-sm font-medium text-gray-900">+250 781 546 413</p>
+                </div>
+              </a>
+
+              <a
+                href="mailto:haricbuz@gmail.com"
+                className="flex items-center gap-3 bg-white border border-gray-100 hover:border-orange-200 rounded-lg px-4 py-3 transition-colors"
+              >
+                <span className="w-9 h-9 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
+                  <Mail className="w-4 h-4 text-orange-600" />
+                </span>
+                <div>
+                  <p className="text-xs text-gray-500">Email us</p>
+                  <p className="text-sm font-medium text-gray-900">haricbuz@gmail.com</p>
+                </div>
+              </a>
+            </div>
+
+            {/* Social */}
+            <div className="px-6 pt-4 pb-6 mt-2 border-t border-gray-100 flex items-center justify-between">
+              <p className="text-sm font-semibold text-gray-900">Follow us</p>
+              <div className="flex gap-2">
+                <a
+                  href="https://x.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="X (Twitter)"
+                  className="w-9 h-9 flex items-center justify-center bg-gray-100 hover:bg-orange-100 rounded-full transition-colors"
+                >
+                  <Twitter className="w-4 h-4 text-gray-700" />
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  className="w-9 h-9 flex items-center justify-center bg-gray-100 hover:bg-orange-100 rounded-full transition-colors"
+                >
+                  <Instagram className="w-4 h-4 text-gray-700" />
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

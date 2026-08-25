@@ -5,3 +5,22 @@
 * {
     font-family: 'Poppins', sans-serif;
   }
+
+/* Site-wide hover polish: a subtle lift on interactive elements.
+   Scoped to elements that already opt into a transition so we don't
+   fight bespoke hover states (e.g. dropdown items with their own timing). */
+@media (prefers-reduced-motion: no-preference) {
+  a.transition-colors,
+  button.transition-colors,
+  a[class*="transition-colors"],
+  button[class*="transition-colors"] {
+    transition-property: color, background-color, border-color, transform;
+  }
+
+  a.transition-colors:not(:disabled):hover,
+  button.transition-colors:not(:disabled):hover,
+  a[class*="transition-colors"]:not(:disabled):hover,
+  button[class*="transition-colors"]:not(:disabled):hover {
+    transform: translateY(-1px);
+  }
+}

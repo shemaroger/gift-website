@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Calendar, Clock, Heart, Search, Tag, User, MessageCircle, Eye, ChevronLeft, ChevronRight, Filter, Plus, RefreshCw, X, ChevronDown, ChevronUp, Star, Image as ImageIcon } from 'lucide-react';
-import { fetchblogs, fetchCategory } from "../../api";
+import { Calendar, Clock, Heart, Search, Tag, User, MessageCircle, Eye, ChevronLeft, ChevronRight, Filter, Plus, RefreshCw, X, ChevronDown, ChevronUp, Star, Image as ImageIcon, Trash2, Edit } from 'lucide-react';
+import { fetchblogs, fetchCategory, deleteblog } from "../../api";
 import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 export default function BlogManagement() {
   const [allBlogs, setAllBlogs] = useState([]);
   const [filteredBlogs, setFilteredBlogs] = useState([]);
@@ -177,6 +179,29 @@ export default function BlogManagement() {
     setSelectedBlog(null);
   };
 
+  // NOTE: there is no edit form for blog posts wired up from this list yet
+  // (AddBlog.jsx has no edit-mode/route-param support), so only Delete is added here.
+  const handleDeleteBlog = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this blog post? This cannot be undone.')) {
+      return;
+    }
+    try {
+      const result = await deleteblog(id);
+      if (result.success) {
+        setAllBlogs(prev => prev.filter(blog => blog.id !== id));
+        if (selectedBlog?.id === id) {
+          closeViewModal();
+        }
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (err) {
+      console.error('Error deleting blog:', err);
+      toast.error('Failed to delete blog post.');
+    }
+  };
+
   // Enhanced Pagination Component
   const PaginationComponent = () => {
     const getVisiblePages = () => {
@@ -342,7 +367,7 @@ export default function BlogManagement() {
                   <input
                     type="text"
                     placeholder="Search posts by title..."
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -359,7 +384,7 @@ export default function BlogManagement() {
 
             <div className="flex flex-wrap gap-2">
               <select
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 value={selectedCategory}
                 onChange={(e) => {
                   setSelectedCategory(e.target.value);
@@ -373,7 +398,7 @@ export default function BlogManagement() {
               </select>
 
               <select
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 value={statusFilter}
                 onChange={(e) => {
                   setStatusFilter(e.target.value);
@@ -389,7 +414,7 @@ export default function BlogManagement() {
               </select>
 
               <select
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 value={featuredFilter}
                 onChange={(e) => {
                   setFeaturedFilter(e.target.value);
@@ -403,7 +428,7 @@ export default function BlogManagement() {
 
               <input
                 type="date"
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                 value={dateFilter}
                 onChange={(e) => {
                   setDateFilter(e.target.value);
@@ -606,6 +631,20 @@ export default function BlogManagement() {
                         >
                           <Eye size={16} />
                         </button>
+                        <Link
+                          to={`/dashboard/editBlog/${blog.id}`}
+                          className="text-orange-600 hover:text-orange-900"
+                          title="Edit blog post"
+                        >
+                          <Edit size={16} />
+                        </Link>
+                        <button
+                          onClick={() => handleDeleteBlog(blog.id)}
+                          className="text-orange-600 hover:text-orange-900"
+                          title="Delete blog post"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -631,12 +670,26 @@ export default function BlogManagement() {
           <div className="bg-white rounded-lg border border-gray-200 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center p-6 border-b">
               <h3 className="text-xl font-bold text-gray-900 font-display">Blog Details</h3>
-              <button
-                onClick={closeViewModal}
-                className="text-gray-400 hover:text-gray-500"
-              >
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-3">
+                <Link
+                  to={`/dashboard/editBlog/${selectedBlog.id}`}
+                  className="px-3 py-1.5 text-sm rounded-lg bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-1"
+                >
+                  <Edit size={14} /> Edit
+                </Link>
+                <button
+                  onClick={() => handleDeleteBlog(selectedBlog.id)}
+                  className="px-3 py-1.5 text-sm rounded-lg bg-orange-600 hover:bg-orange-700 text-white flex items-center gap-1"
+                >
+                  <Trash2 size={14} /> Delete
+                </button>
+                <button
+                  onClick={closeViewModal}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
             <div className="p-6">

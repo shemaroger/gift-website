@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { fetchAds } from "../../api";
-import { EyeIcon } from 'lucide-react';
+import { fetchAds, deleteAds } from "../../api";
+import { EyeIcon, Trash2 } from 'lucide-react';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const GetAds = () => {
   // State for ads data
@@ -142,6 +144,27 @@ const GetAds = () => {
   const closeModal = () => {
     setModalOpen(false);
     setSelectedAd(null);
+  };
+
+  const handleDeleteAd = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this ad? This cannot be undone.')) {
+      return;
+    }
+    try {
+      const result = await deleteAds(id);
+      if (result.success) {
+        setAllAds(prev => prev.filter(ad => ad.id !== id));
+        if (selectedAd?.id === id) {
+          closeModal();
+        }
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (err) {
+      console.error('Error deleting ad:', err);
+      toast.error('Failed to delete advertisement.');
+    }
   };
 
   const getStatusBadge = (ad) => {
@@ -375,6 +398,13 @@ const GetAds = () => {
                         className="text-orange-600 hover:text-orange-900 mr-4"
                       >
                         <EyeIcon className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteAd(ad.id)}
+                        className="text-orange-600 hover:text-orange-900"
+                        title="Delete ad"
+                      >
+                        <Trash2 className="h-5 w-5" />
                       </button>
                     </td>
                   </tr>
@@ -669,11 +699,18 @@ const GetAds = () => {
               {/* Modal footer */}
               <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                 <Link
-                  to={`/ads/edit/${selectedAd.id}`}
+                  to={`/dashboard/editAds/${selectedAd.id}`}
                   className="w-full inline-flex justify-center rounded-md border border-transparent px-4 py-2 bg-orange-600 text-base font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 sm:ml-3 sm:w-auto sm:text-sm"
                 >
                   Edit Ad
                 </Link>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteAd(selectedAd.id)}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-transparent px-4 py-2 bg-orange-600 text-base font-medium text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                >
+                  Delete Ad
+                </button>
                 <button
                   type="button"
                   onClick={closeModal}

@@ -242,6 +242,21 @@ export const fetchAds = async () => {
   }
 };
 
+export const fetchAdById = async (id) => {
+  try {
+    const response = await api.get(`/ads/${id}/`);
+    return {
+      success: true,
+      data: response.data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error fetching ad.",
+    };
+  }
+};
+
 export const createAds = async (AdsData) => {
   try {
     const response = await api.post("/ads/", AdsData, {
@@ -258,9 +273,13 @@ export const createAds = async (AdsData) => {
       };
     }
   } catch (error) {
+    const data = error.response?.data;
+    const fieldError = data && typeof data === 'object'
+      ? Object.entries(data).map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(' ') : msgs}`).join(' ')
+      : null;
     return {
       success: false,
-      message: error.response?.data?.detail || "Error creating Ads.",
+      message: data?.detail || fieldError || "Error creating Ads.",
     };
   }
 };
@@ -671,5 +690,249 @@ export const updateDonationStatus = async (id, statusData) => {
   } catch (error) {
     console.error('Error updating donation status:', error);
     throw error;
+  }
+};
+
+// ---------------------------------------------------------------------
+// Delete / additional update helpers
+// ---------------------------------------------------------------------
+
+export const deleteUser = async (id) => {
+  try {
+    await api.delete(`/users/${id}/delete/`);
+    return { success: true, message: "User removed successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error removing user.",
+    };
+  }
+};
+
+export const deleteRole = async (id) => {
+  try {
+    await api.delete(`/roles/${id}/`);
+    return { success: true, message: "Role removed successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error removing role.",
+    };
+  }
+};
+
+export const updateAds = async (id, adsData) => {
+  try {
+    const response = await api.put(`/ads/${id}/`, adsData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return { success: true, message: "Ad updated successfully!", data: response.data };
+  } catch (error) {
+    const data = error.response?.data;
+    const fieldError = data && typeof data === 'object'
+      ? Object.entries(data).map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(' ') : msgs}`).join(' ')
+      : null;
+    return {
+      success: false,
+      message: data?.detail || fieldError || "Error updating ad.",
+    };
+  }
+};
+
+export const deleteAds = async (id) => {
+  try {
+    await api.delete(`/ads/${id}/`);
+    return { success: true, message: "Ad deleted successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error deleting ad.",
+    };
+  }
+};
+
+export const updateblog = async (id, blogsData) => {
+  try {
+    const response = await api.put(`/posts/${id}/`, blogsData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return { success: true, message: "Blog updated successfully!", data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error updating blog.",
+    };
+  }
+};
+
+export const deleteblog = async (id) => {
+  try {
+    await api.delete(`/posts/${id}/`);
+    return { success: true, message: "Blog deleted successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error deleting blog.",
+    };
+  }
+};
+
+export const deleteBlogCategory = async (id) => {
+  try {
+    await api.delete(`/categories/${id}/`);
+    return { success: true, message: "Category deleted successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error deleting category.",
+    };
+  }
+};
+
+export const deleteAnnouncement = async (id) => {
+  try {
+    await api.delete(`/announcements/${id}/`);
+    return { success: true, message: "Announcement deleted successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error deleting announcement.",
+    };
+  }
+};
+
+export const deleteEvent = async (id) => {
+  try {
+    await api.delete(`/events/${id}/`);
+    return { success: true, message: "Event deleted successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error deleting event.",
+    };
+  }
+};
+
+export const updateGalleryItem = async (id, galleryData) => {
+  try {
+    const response = await api.put(`/gallery/${id}/`, galleryData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return { success: true, message: "Gallery item updated successfully!", data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error updating gallery item.",
+    };
+  }
+};
+
+export const deleteGalleryItem = async (id) => {
+  try {
+    await api.delete(`/gallery/${id}/`);
+    return { success: true, message: "Gallery item deleted successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error deleting gallery item.",
+    };
+  }
+};
+
+export const fetchTestimonials = async () => {
+  try {
+    const response = await api.get("/testimonials/");
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error fetching testimonials.",
+    };
+  }
+};
+
+export const fetchTestimonialById = async (id) => {
+  try {
+    const response = await api.get(`/testimonials/${id}/`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error fetching testimonial.",
+    };
+  }
+};
+
+export const createTestimonial = async (testimonialData) => {
+  try {
+    const response = await api.post("/testimonials/", testimonialData);
+    return { success: true, message: "Testimonial created successfully!", data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error creating testimonial.",
+      errors: error.response?.data,
+    };
+  }
+};
+
+export const updateTestimonial = async (id, testimonialData) => {
+  try {
+    const response = await api.put(`/testimonials/${id}/`, testimonialData);
+    return { success: true, message: "Testimonial updated successfully!", data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error updating testimonial.",
+      errors: error.response?.data,
+    };
+  }
+};
+
+export const deleteTestimonial = async (id) => {
+  try {
+    await api.delete(`/testimonials/${id}/`);
+    return { success: true, message: "Testimonial deleted successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error deleting testimonial.",
+    };
+  }
+};
+
+export const deleteGalleryCategory = async (id) => {
+  try {
+    await api.delete(`/gallery-categories/${id}/`);
+    return { success: true, message: "Gallery category deleted successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error deleting gallery category.",
+    };
+  }
+};
+
+export const deleteDonation = async (id) => {
+  try {
+    await api.delete(`/admin-donations/${id}/`);
+    return { success: true, message: "Donation record deleted successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error deleting donation record.",
+    };
+  }
+};
+
+export const deleteContact = async (id) => {
+  try {
+    await api.delete(`/admin-contacts/${id}/delete/`);
+    return { success: true, message: "Contact deleted successfully!" };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error deleting contact.",
+    };
   }
 };

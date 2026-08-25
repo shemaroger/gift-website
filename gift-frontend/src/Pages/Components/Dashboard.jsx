@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-import { ChevronDown, Moon, Sun, Menu, X, PieChart, Folder, Users, BarChart2, Calendar, LogOut, ClipboardList, CalendarDays, BookOpen, User } from "lucide-react";
+import { ChevronDown, Moon, Sun, Menu, X, PieChart, Folder, Users, BarChart2, Calendar, LogOut, ClipboardList, CalendarDays, BookOpen, User, MessageSquare } from "lucide-react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Outlet, Link } from "react-router-dom";
 import { toast, ToastContainer } from 'react-toastify';
@@ -74,6 +74,7 @@ const Dashboard = () => {
     { name: 'Events management', icon: <CalendarDays className="w-5 h-5 text-black" />, path: '/dashboard/getEvent' },
     { name: 'Announcements', icon: <ClipboardList className="w-5 h-5 text-black" />, path: '/dashboard/addAnnouncement' },
     { name: 'Gallery And Video', icon: <Calendar className="w-5 h-5 text-black" />, path: '/dashboard/getGallery' },
+    { name: 'Testimonials', icon: <MessageSquare className="w-5 h-5 text-black" />, path: '/dashboard/getTestimonials' },
     { name: 'Donation', icon: <Calendar className="w-5 h-5 text-black" />, path: '/dashboard/viewDonation' },
     { name: 'Contact Messages', icon: <Calendar className="w-5 h-5 text-black" />, path: '/dashboard/viewContact' },
   ];

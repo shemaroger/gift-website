@@ -17,10 +17,8 @@ urlpatterns = [
 
     path('users/', UserListView.as_view(), name='user-list'),
     path('userDetails/<int:id>/', UserDetailView.as_view(), name='user-detail'),
-    # path('users/create/', UserCreateView.as_view(), name='user-create'),
-    # path('users/<int:pk>/', UserDetailView.as_view(), name='user-detail'),
-    # path('users/<int:pk>/update/', UserUpdateView.as_view(), name='user-update'),
-    # path('users/<int:pk>/delete/', UserDeleteView.as_view(), name='user-delete'),
+    path('update-user/<int:id>/', UserUpdateView.as_view(), name='user-update'),
+    path('users/<int:id>/delete/', UserDeleteView.as_view(), name='user-delete'),
     
     # User Management Endpoints
     path('users/', UserListView.as_view(), name='user-list'),
@@ -32,7 +30,8 @@ urlpatterns = [
 
     # Admin endpoints
     path('ads/', AdListCreateAPI.as_view(), name='ad-list-create'),
-    
+    path('ads/<int:pk>/', AdDetailAPI.as_view(), name='ad-detail'),
+
     # Public endpoints
     path('ads/active/', ActiveAdsAPI.as_view(), name='active-ads'),
     path('ads/<int:pk>/track-view/', TrackAdViewAPI.as_view(), name='track-view'),
@@ -42,6 +41,7 @@ urlpatterns = [
     path('events/', EventListCreateAPI.as_view(), name='event-list'),
     path('events/<int:pk>/', EventListCreateAPI.as_view(), name='event-update'),
      path('events_detail/<int:pk>/', EventDetailAPI.as_view(), name='event-detail'),
+     path('events_detail/uuid/<uuid:uuid>/', EventByUuidAPI.as_view(), name='event-detail-uuid'),
     
     
     # Registration endpoints
@@ -51,6 +51,7 @@ urlpatterns = [
     # Blog posts
     path('posts/', BlogPostListCreateAPIView.as_view(), name='blogpost-list'),
     path('posts/<int:pk>/', BlogPostDetailAPIView.as_view(), name='blogpost-detail'),
+    path('posts/uuid/<uuid:uuid>/', BlogPostByUuidAPIView.as_view(), name='blogpost-detail-uuid'),
 
     # Comments
     path('posts/<slug:slug>/comments/', BlogCommentListCreateAPIView.as_view(), name='blog-comments'),
@@ -73,10 +74,14 @@ urlpatterns = [
     path('gallery/', GalleryItemListCreateAPI.as_view(), name='gallery-list'),
     path('gallery/<int:pk>/', GalleryItemDetailAPI.as_view(), name='gallery-detail'),
     path('gallery-categories/', GalleryCategoryListAPI.as_view(), name='gallery-categories'),
-    path('gallery-categories/<int:id>/', GalleryCategoryListAPI.as_view(), name='gallery-categories-update'),    
+    path('gallery-categories/<int:id>/', GalleryCategoryListAPI.as_view(), name='gallery-categories-update'),
+
+    path('testimonials/', TestimonialListCreateAPI.as_view(), name='testimonial-list'),
+    path('testimonials/<int:pk>/', TestimonialDetailAPI.as_view(), name='testimonial-detail'),
 
     # Public endpoints
     path('gallery/', PublicGalleryAPI.as_view(), name='public-gallery'),
+    path('testimonials/public/', PublicTestimonialAPI.as_view(), name='public-testimonials'),
 
     # Public API (no authentication required)
     path('donation/interest/', DonationCommitmentCreateAPIView.as_view(), name='donation-interest'),

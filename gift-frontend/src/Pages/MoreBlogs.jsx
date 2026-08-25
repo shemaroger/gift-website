@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, BookOpen, Check, Send } from 'lucide-react';
+import { Search, BookOpen } from 'lucide-react';
 import { fetchblogs, fetchCategory } from "../publicApi";
 
 const MoreBlogs = () => {
@@ -13,8 +13,6 @@ const MoreBlogs = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [blogsPerPage] = useState(3);
   const [totalPages, setTotalPages] = useState(0);
-  const [newsletterEmail, setNewsletterEmail] = useState('');
-  const [subscribed, setSubscribed] = useState(false);
 
   // Fetch blogs and categories on component mount
   useEffect(() => {
@@ -140,16 +138,16 @@ const MoreBlogs = () => {
   return (
     <div className="bg-white mt-28 md:mt-32">
       {/* Hero Section */}
-      <div className="bg-slate-900 py-16 md:py-20">
+      <div className="bg-gray-200 py-6 md:py-8">
         <div className="container mx-auto px-4 max-w-3xl text-center">
-          <span className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/15 border border-orange-500/30 rounded-full text-orange-300 text-xs font-semibold uppercase tracking-wide mb-6">
+          <span className="inline-flex items-center gap-2 px-3 py-1 bg-orange-500/15 border border-orange-500/30 rounded-full text-orange-700 text-xs font-semibold uppercase tracking-wide mb-3">
             <BookOpen className="w-3.5 h-3.5" />
             Our Blog
           </span>
-          <h1 className="font-display text-3xl md:text-5xl font-semibold text-white leading-tight mb-4">
+          <h1 className="font-display text-2xl md:text-3xl font-semibold text-gray-900 leading-tight mb-2">
             Stories from the communities we work with
           </h1>
-          <p className="text-gray-300 text-base md:text-lg leading-relaxed mb-8">
+          <p className="text-gray-600 text-sm leading-relaxed mb-4">
             Field notes, program updates, and the people behind the numbers.
           </p>
 
@@ -160,7 +158,7 @@ const MoreBlogs = () => {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search articles..."
-                className="w-full px-5 py-3 pl-12 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all text-white placeholder-gray-400"
+                className="w-full px-5 py-2.5 pl-12 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all text-gray-900 placeholder-gray-400"
               />
               <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
             </div>
@@ -178,14 +176,14 @@ const MoreBlogs = () => {
                   key={blog.id}
                   className="group flex flex-col md:flex-row md:items-start gap-8 border-b border-gray-100 pb-12"
                 >
-                  <div className="relative w-full md:w-2/5 aspect-video overflow-hidden rounded-2xl">
+                  <div className="relative w-full md:w-2/5 aspect-video overflow-hidden rounded-lg">
                     <img
                       src={blog.featured_image}
                       alt={blog.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                     {typeof blog.category === 'object' && blog.category && (
-                      <span className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white px-4 py-1.5 rounded-full text-sm font-medium">
+                      <span className="absolute top-4 left-4 bg-black/70 text-white px-4 py-1.5 rounded-full text-sm font-medium">
                         {blog.category.name}
                       </span>
                     )}
@@ -193,12 +191,6 @@ const MoreBlogs = () => {
 
                   <div className="w-full md:w-3/5 flex flex-col">
                     <div className="flex items-center text-sm text-gray-500 mb-3">
-                      <div className="flex items-center mr-4">
-                        <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
-                        <span>{blog.author_details?.first_name + " " + blog.author_details?.last_name || "Anonymous"}</span>
-                      </div>
                       <div className="flex items-center">
                         <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -221,7 +213,7 @@ const MoreBlogs = () => {
 
                     <button
                       className="inline-flex items-center text-sm font-semibold text-orange-600 hover:text-orange-800 transition-colors duration-200 mt-auto group/btn"
-                      onClick={() => handleReadMore(blog.id)}
+                      onClick={() => handleReadMore(blog.uuid)}
                     >
                       Read article
                       <svg
@@ -237,7 +229,7 @@ const MoreBlogs = () => {
                 </div>
               ))
             ) : (
-              <div className="bg-gray-50 rounded-2xl py-16 text-center">
+              <div className="bg-gray-50 rounded-lg py-16 text-center">
                 <svg className="w-20 h-20 mx-auto text-gray-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                 </svg>
@@ -296,7 +288,7 @@ const MoreBlogs = () => {
           {/* Sidebar */}
           <div className="lg:col-span-4 space-y-8">
             {/* Categories */}
-            <div className="bg-gray-50 rounded-2xl p-6">
+            <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-bold mb-6 text-gray-900 flex items-center">
                 <svg className="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -307,7 +299,7 @@ const MoreBlogs = () => {
                 {categoryCounts.map((category) => (
                   <div key={category.name} className="flex justify-between items-center group hover:bg-white p-3 rounded-xl transition-all duration-200 cursor-pointer">
                     <span className="text-gray-700 group-hover:text-orange-700">{category.name}</span>
-                    <span className="bg-slate-900 text-white px-2 py-1 rounded-full text-xs font-medium">
+                    <span className="bg-orange-600 text-white px-2 py-1 rounded-full text-xs font-medium">
                       {category.count}
                     </span>
                   </div>
@@ -316,7 +308,7 @@ const MoreBlogs = () => {
             </div>
 
             {/* Recent Posts */}
-            <div className="bg-gray-50 rounded-2xl p-6">
+            <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-bold mb-6 text-gray-900 flex items-center">
                 <svg className="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -328,7 +320,7 @@ const MoreBlogs = () => {
                   <div
                     key={index}
                     className="flex gap-4 group cursor-pointer"
-                    onClick={() => handleReadMore(post.id)}
+                    onClick={() => handleReadMore(post.uuid)}
                   >
                     <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
                       <img
@@ -351,7 +343,7 @@ const MoreBlogs = () => {
             </div>
 
             {/* Tags */}
-            <div className="bg-gray-50 rounded-2xl p-6">
+            <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-bold mb-6 text-gray-900 flex items-center">
                 <svg className="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 20l4-16m2 16l4-16M6 9h14M4 15h14" />
@@ -362,7 +354,7 @@ const MoreBlogs = () => {
                 {tags.map((tag) => (
                   <span
                     key={tag}
-                    className="px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-full text-sm hover:bg-slate-900 hover:text-white hover:border-slate-900 cursor-pointer transition-all duration-200"
+                    className="px-3 py-1.5 bg-white border border-gray-200 text-gray-700 rounded-full text-sm hover:bg-orange-600 hover:text-white hover:border-orange-600 cursor-pointer transition-all duration-200"
                   >
                     {tag}
                   </span>
@@ -370,41 +362,6 @@ const MoreBlogs = () => {
               </div>
             </div>
 
-            {/* Newsletter */}
-            <div className="bg-slate-900 rounded-lg p-8 text-white">
-              <h3 className="text-xl font-bold mb-2">Stay Updated</h3>
-              <p className="text-gray-300 mb-6 text-sm">Get the latest articles and updates delivered straight to your inbox.</p>
-              {subscribed ? (
-                <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 border border-green-500/20 rounded-lg px-4 py-3">
-                  <Check className="w-4 h-4 flex-shrink-0" />
-                  Thanks — you're on the list.
-                </div>
-              ) : (
-                <form
-                  className="flex flex-col space-y-3"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (!newsletterEmail) return;
-                    setSubscribed(true);
-                    setNewsletterEmail('');
-                  }}
-                >
-                  <input
-                    type="email"
-                    value={newsletterEmail}
-                    onChange={(e) => setNewsletterEmail(e.target.value)}
-                    placeholder="Your email address"
-                    className="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent transition-all duration-200 placeholder-gray-400"
-                  />
-                  <button
-                    type="submit"
-                    className="w-full flex items-center justify-center gap-2 bg-orange-600 text-white font-medium py-3 rounded-lg hover:bg-orange-700 transition-colors"
-                  >
-                    Subscribe <Send className="w-4 h-4" />
-                  </button>
-                </form>
-              )}
-            </div>
           </div>
         </div>
       </div>

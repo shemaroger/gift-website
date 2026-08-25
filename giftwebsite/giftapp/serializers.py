@@ -180,7 +180,7 @@ class AdSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ad
         fields = [
-            'id', 'title', 'description', 'image', 'content', 
+            'id', 'uuid', 'title', 'description', 'image', 'content',
             'target_url', 'is_active', 'start_date', 'end_date',
             'views', 'clicks', 'created_at', 'is_currently_active'
         ]
@@ -206,7 +206,7 @@ class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
         fields = [
-            'id', 'title', 'description', 'event_type', 
+            'id', 'uuid', 'title', 'description', 'event_type',
             'location', 'online_link', 'start_date', 'end_date',
             'image', 'banner', 'is_public', 'is_active',
             'registrations', 'status', 'created_at'
@@ -248,7 +248,7 @@ class BlogPostSerializer(serializers.ModelSerializer):
     class Meta:
         model = BlogPost
         fields = [
-            'id', 'title', 'slug', 'author', 'author_details','category_details','category',
+            'id', 'uuid', 'title', 'slug', 'author', 'author_details','category_details','category',
             'content', 'excerpt', 'featured_image', 'status',
             'is_featured', 'published_date', 'comments',
             'like_count', 'is_liked', 'created_at'
@@ -290,7 +290,7 @@ class GalleryItemCreateSerializer(serializers.ModelSerializer):
         model = GalleryItem
         fields = [
             'id', 'title', 'description', 'categories',
-            'media_type', 'image', 'video_url', 'thumbnail',
+            'media_type', 'image', 'video_url', 'video_file', 'thumbnail',
             'is_active'
         ]
 
@@ -298,12 +298,20 @@ class GalleryItemSerializer(serializers.ModelSerializer):
     categories = GalleryCategorySerializer(many=True, read_only=True)
     media_url = serializers.SerializerMethodField()
     thumbnail_url = serializers.SerializerMethodField()
+    is_uploaded_video = serializers.SerializerMethodField()
     uploaded_by = serializers.StringRelatedField()
-    
+
+    def get_is_uploaded_video(self, obj):
+        """True when the video is a self-hosted file (play with <video>), as
+        opposed to an external URL/embed (YouTube, Vimeo, etc.)."""
+        return bool(obj.media_type == 'video' and obj.video_file)
+
     def get_media_url(self, obj):
         request = self.context.get('request')
         if obj.media_type == 'image' and obj.image:
             return request.build_absolute_uri(obj.image.url)
+        if obj.media_type == 'video' and obj.video_file:
+            return request.build_absolute_uri(obj.video_file.url)
         return obj.video_url
 
     def get_thumbnail_url(self, obj):
@@ -320,8 +328,40 @@ class GalleryItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GalleryItem
-        fields = '__all__'  
-                    
+        fields = '__all__'
+
+class TestimonialCreateSerializer(serializers.ModelSerializer):
+    categories = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=GalleryCategory.objects.all(),
+        required=False
+    )
+    gallery_item = serializers.PrimaryKeyRelatedField(
+        queryset=GalleryItem.objects.all(),
+        required=False,
+        allow_null=True
+    )
+
+    class Meta:
+        model = Testimonial
+        fields = ['id', 'name', 'role', 'quote', 'gallery_item', 'categories', 'is_active']
+
+class PublicTestimonialCreateSerializer(serializers.ModelSerializer):
+    """Public visitors can submit a name/role/quote only — no gallery_item
+    or categories, and it's forced inactive until an admin approves it."""
+
+    class Meta:
+        model = Testimonial
+        fields = ['id', 'name', 'role', 'quote']
+
+class TestimonialSerializer(serializers.ModelSerializer):
+    categories = GalleryCategorySerializer(many=True, read_only=True)
+    gallery_item = GalleryItemSerializer(read_only=True)
+
+    class Meta:
+        model = Testimonial
+        fields = '__all__'
+
 class ContactSerializer(serializers.ModelSerializer):
     """Serializer for Contact model"""
     

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Save, Plus, Edit, Search, ArrowLeft } from 'lucide-react';
-import { CreateCategortblogs, fetchCategory, updatecategory } from "../../api";
+import { Save, Plus, Edit, Search, ArrowLeft, Trash2 } from 'lucide-react';
+import { CreateCategortblogs, fetchCategory, updatecategory, deleteBlogCategory } from "../../api";
 import { toast, } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { Link } from 'react-router-dom';
@@ -117,6 +117,24 @@ export default function CategoryCreationForm() {
     setError(null);
   };
 
+  const handleDelete = async (categoryId) => {
+    if (!window.confirm('Are you sure you want to delete this category? This cannot be undone.')) {
+      return;
+    }
+    try {
+      const result = await deleteBlogCategory(categoryId);
+      if (result.success) {
+        setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+        toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (err) {
+      console.error('Error deleting category:', err);
+      toast.error('Failed to delete category.');
+    }
+  };
+
   const filteredCategories = Array.isArray(categories) ? categories.filter(cat =>
     cat.name && cat.name.toLowerCase().includes(searchTerm.toLowerCase())
   ) : [];
@@ -173,7 +191,7 @@ export default function CategoryCreationForm() {
                         name="name"
                         value={formData.name}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                         placeholder="e.g. Technology"
                       />
                     </div>
@@ -186,7 +204,7 @@ export default function CategoryCreationForm() {
                         name="icon"
                         value={formData.icon}
                         onChange={handleInputChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
                       >
                         <option value="">Select an icon</option>
                         {commonIcons.map(icon => (
@@ -288,6 +306,13 @@ export default function CategoryCreationForm() {
                               title="Edit"
                             >
                               <Edit size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(category.id)}
+                              className="p-1 text-orange-600 hover:text-orange-800"
+                              title="Delete"
+                            >
+                              <Trash2 size={16} />
                             </button>
 
                           </div>
