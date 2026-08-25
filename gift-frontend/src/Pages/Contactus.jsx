@@ -128,7 +128,7 @@ const Contactus = () => {
                     <Phone className="w-5 h-5 text-orange-600" />
                     <h3 className="text-lg font-semibold text-gray-900">Let's talk!</h3>
                   </div>
-                  <p className="text-gray-600 text-sm">+250078877777</p>
+                  <p className="text-gray-600 text-sm">+250 781 546 413</p>
                   <p className="text-gray-600 text-sm">haricbuz@gmail.com</p>
                 </div>
 

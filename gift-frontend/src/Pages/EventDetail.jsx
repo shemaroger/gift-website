@@ -103,7 +103,7 @@ const EventDetails = () => {
     if (error) {
         return (
             <div className="flex justify-center items-center h-screen bg-orange-50">
-                <div className="text-xl text-red-600 p-8 bg-white shadow-lg rounded-xl border-l-4 border-red-600">
+                <div className="text-xl text-red-600 p-8 bg-white rounded-lg border-l-4 border-red-600">
                     <h2 className="font-bold mb-2">Error</h2>
                     <p>{error}</p>
                     <button
@@ -120,7 +120,7 @@ const EventDetails = () => {
     if (!event) {
         return (
             <div className="flex justify-center items-center h-screen bg-orange-50">
-                <div className="text-xl p-8 bg-white shadow-lg rounded-xl">
+                <div className="text-xl p-8 bg-white rounded-lg border border-gray-100">
                     <h2 className="font-bold mb-2">Event not found</h2>
                     <p>The event you're looking for doesn't exist or has been removed.</p>
                     <button
@@ -202,42 +202,32 @@ const EventDetails = () => {
     };
 
     return (
-        <div className="bg-orange-50 mt-28 md:mt-32">
+        <div className="bg-white mt-28 md:mt-32">
             {/* Hero Section */}
-            <div className="bg-slate-900 py-24 relative overflow-hidden text-white">
-                <div className="absolute inset-0 opacity-30">
-                    <svg className="h-full w-full" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
-                        <path
-                            fill="#fff"
-                            fillOpacity="0.1"
-                            d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,117.3C672,107,768,117,864,144C960,171,1056,213,1152,202.7C1248,192,1344,128,1392,96L1440,64L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
-                        />
-                    </svg>
-                </div>
-
-                <div className="container mx-auto px-4 relative z-10">
+            <div className="bg-gray-200 py-8 md:py-10">
+                <div className="container mx-auto px-4">
                     <div className="max-w-2xl mx-auto text-center">
-                        <h1 className="font-display text-3xl md:text-5xl font-semibold mb-6 leading-tight">
+                        <h1 className="font-display text-2xl md:text-4xl font-semibold mb-4 leading-tight text-gray-900">
                             {event.title}
                         </h1>
 
-                        <div className="flex flex-col md:flex-row justify-center gap-4 md:gap-6 mb-8">
-                            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
+                        <div className="flex flex-col md:flex-row justify-center gap-3 md:gap-4 mb-6">
+                            <div className="flex items-center justify-center gap-2 border border-gray-300 bg-white rounded-full px-4 py-2 text-sm text-gray-700">
                                 {event.event_type === 'offline' ? (
                                     <>
-                                        <MapPin className="w-5 h-5 text-orange-400" />
+                                        <MapPin className="w-4 h-4 text-orange-600" />
                                         <span>{event.location || "Location to be announced"}</span>
                                     </>
                                 ) : (
                                     <>
-                                        <Globe className="w-5 h-5 text-orange-400" />
+                                        <Globe className="w-4 h-4 text-orange-600" />
                                         <span>Online Event</span>
                                     </>
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2">
-                                <Calendar className="w-5 h-5 text-orange-400" />
+                            <div className="flex items-center justify-center gap-2 border border-gray-300 bg-white rounded-full px-4 py-2 text-sm text-gray-700">
+                                <Calendar className="w-4 h-4 text-orange-600" />
                                 <span>{dateTimeDisplay}</span>
                             </div>
                         </div>
@@ -247,16 +237,16 @@ const EventDetails = () => {
                                 href={event.online_link}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block bg-orange-500 text-white hover:bg-orange-600 font-medium rounded-full px-6 py-3 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1"
+                                className="inline-block bg-orange-600 text-white hover:bg-orange-700 font-medium rounded-full px-6 py-3 transition-colors"
                             >
                                 Join Online Event
                             </a>
                         )}
 
-                        <div className="mt-8">
+                        <div className="mt-6">
                             <button
                                 onClick={() => navigate('/events')}
-                                className="flex items-center justify-center text-orange-300 hover:text-white transition-colors"
+                                className="flex items-center justify-center mx-auto text-orange-600 hover:text-orange-700 transition-colors text-sm"
                             >
                                 <ChevronLeft className="w-4 h-4 mr-1" />
                                 Back to Events

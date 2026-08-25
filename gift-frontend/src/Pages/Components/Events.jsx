@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, ChevronRight } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { fetchEvents } from "../../publicApi";
 
@@ -126,6 +126,11 @@ const Events = () => {
     );
   }
 
+  // Nothing to show — hide the whole section rather than an empty placeholder.
+  if (upcomingEvents.length === 0 && recentEvents.length === 0) {
+    return null;
+  }
+
   return (
     <section className="bg-gray-50 py-16 md:py-24">
       <div className="container mx-auto px-4">
@@ -151,15 +156,6 @@ const Events = () => {
             {upcomingEvents.map((event, index) => (
               <EventCard key={event.id || index} {...event} />
             ))}
-          </div>
-        )}
-
-        {/* Empty State */}
-        {upcomingEvents.length === 0 && recentEvents.length === 0 && (
-          <div className="text-center py-16 border border-dashed border-gray-200 rounded-lg">
-            <Calendar className="w-10 h-10 text-gray-400 mx-auto mb-4" />
-            <h3 className="font-display text-xl font-semibold text-gray-700 mb-2">No events scheduled right now</h3>
-            <p className="text-gray-500 text-sm">Check back soon, or follow us on social media for updates.</p>
           </div>
         )}
       </div>
