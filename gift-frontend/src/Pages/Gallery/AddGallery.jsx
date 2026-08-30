@@ -8,9 +8,9 @@ import { fetchGalleryCategories, createGalleryItem } from '../../api';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-// Cloudinary rejects a single-request upload over this size with a 413 —
-// catch it client-side with a clear message instead of a failed network call.
-const MAX_VIDEO_SIZE_MB = 200;
+// Videos are stored on local disk (not Cloudinary) — this cap just keeps
+// uploads from taking forever / timing out on a slow connection.
+const MAX_VIDEO_SIZE_MB = 500;
 const MAX_VIDEO_SIZE_BYTES = MAX_VIDEO_SIZE_MB * 1024 * 1024;
 
 export default function AddGalleryItem() {
