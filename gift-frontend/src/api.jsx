@@ -259,11 +259,7 @@ export const fetchAdById = async (id) => {
 
 export const createAds = async (AdsData) => {
   try {
-    const response = await api.post("/ads/", AdsData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await api.post("/ads/", AdsData);
     if (response.status >= 200 && response.status < 300) {
       return { success: true, message: "Ads created successfully!" };
     } else {
@@ -305,11 +301,7 @@ export const CreateCategortblogs = async (categoryData) => {
 
 export const createblogs = async (blogsData) => {
   try {
-    const response = await api.post("/posts/", blogsData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await api.post("/posts/", blogsData);
     if (response.status >= 200 && response.status < 300) {
       return { success: true, message: "Blogs created successfully!" };
     } else {
@@ -469,11 +461,7 @@ export const fetchGalleryItems = async () => {
 
 export const createGalleryItem = async (galleryData) => {
   try {
-    const response = await api.post("/gallery/", galleryData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await api.post("/gallery/", galleryData);
     if (response.status >= 200 && response.status < 300) {
       return { success: true, message: "Gallery item created successfully!" };
     } else {
@@ -563,11 +551,7 @@ export const fetchGalleryCategories = async () => {
 
 export const createEvent = async (eventData) => {
   try {
-    const response = await api.post("/events/", eventData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await api.post("/events/", eventData);
     if (response.status >= 200 && response.status < 300) {
       return { success: true, message: "Event created successfully!" };
     } else {
@@ -723,9 +707,7 @@ export const deleteRole = async (id) => {
 
 export const updateAds = async (id, adsData) => {
   try {
-    const response = await api.put(`/ads/${id}/`, adsData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await api.put(`/ads/${id}/`, adsData);
     return { success: true, message: "Ad updated successfully!", data: response.data };
   } catch (error) {
     const data = error.response?.data;
@@ -753,9 +735,7 @@ export const deleteAds = async (id) => {
 
 export const updateblog = async (id, blogsData) => {
   try {
-    const response = await api.put(`/posts/${id}/`, blogsData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await api.put(`/posts/${id}/`, blogsData);
     return { success: true, message: "Blog updated successfully!", data: response.data };
   } catch (error) {
     return {
@@ -815,9 +795,7 @@ export const deleteEvent = async (id) => {
 
 export const updateGalleryItem = async (id, galleryData) => {
   try {
-    const response = await api.put(`/gallery/${id}/`, galleryData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+    const response = await api.put(`/gallery/${id}/`, galleryData);
     return { success: true, message: "Gallery item updated successfully!", data: response.data };
   } catch (error) {
     return {
