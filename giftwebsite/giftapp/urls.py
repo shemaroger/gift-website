@@ -117,6 +117,11 @@ urlpatterns = [
     path('admin-contacts/stats/', ContactStatsView.as_view(), name='contact-stats'),
     path('admin-contacts/bulk-update/', ContactBulkUpdateStatusView.as_view(), name='contact-bulk-update'),
 
+    # Google Drive OAuth (one-time admin authorization for file storage)
+    path('google-drive/auth/start/', GoogleDriveAuthStartView.as_view(), name='google-drive-auth-start'),
+    path('google-drive/callback/', GoogleDriveCallbackView.as_view(), name='google-drive-callback'),
+    path('media/drive/<str:file_id>/', GoogleDriveMediaProxyView.as_view(), name='gdrive-media-proxy'),
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

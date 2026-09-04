@@ -20,6 +20,8 @@ tzdata==2025.2
 urllib3==2.4.0
 whitenoise==6.5.0
 
-# Added for Cloudinary support
-cloudinary==1.38.0
-django-cloudinary-storage==0.3.0
+# Added for Google Drive storage (OAuth 2.0)
+google-api-python-client==2.149.0
+google-auth==2.35.0
+google-auth-httplib2==0.2.0
+google-auth-oauthlib==1.2.1

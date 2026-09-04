@@ -294,6 +294,27 @@ class GalleryItemCreateSerializer(serializers.ModelSerializer):
             'is_active'
         ]
 
+    def validate(self, attrs):
+        media_type = attrs.get('media_type', getattr(self.instance, 'media_type', None))
+
+        def has_value(field):
+            # For a partial update (PUT from the edit form), an omitted
+            # field means "keep the existing value" — so fall back to what's
+            # already on the instance rather than treating it as missing.
+            if field in attrs:
+                return bool(attrs[field])
+            return bool(getattr(self.instance, field, None)) if self.instance else False
+
+        if media_type == 'image' and not has_value('image'):
+            raise serializers.ValidationError({'image': 'An image is required for image items.'})
+
+        if media_type == 'video' and not has_value('video_file') and not has_value('video_url'):
+            raise serializers.ValidationError({
+                'video_file': 'A video file or video URL is required for video items.'
+            })
+
+        return attrs
+
 class GalleryItemSerializer(serializers.ModelSerializer):
     categories = GalleryCategorySerializer(many=True, read_only=True)
     media_url = serializers.SerializerMethodField()

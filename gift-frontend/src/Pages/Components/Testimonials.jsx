@@ -22,6 +22,8 @@ export default function Testimonials() {
 
   if (loading || testimonials.length === 0) return null;
 
+  const isSingle = testimonials.length === 1;
+
   return (
     <section className="py-16 md:py-24 bg-gray-50">
       <div className="container mx-auto px-4">
@@ -40,14 +42,14 @@ export default function Testimonials() {
           </Link>
         </div>
 
-        {testimonials.length === 1 ? (
+        {isSingle ? (
           <FeaturedTestimonial testimonial={testimonials[0]} />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {testimonials.map((t) => (
               <div key={t.id} className="bg-white border border-gray-100 rounded-lg overflow-hidden flex flex-col">
                 {t.gallery_item && (
-                  <div className="w-full h-40 bg-gray-900">
+                  <div className="w-full aspect-[4/3] bg-gray-900">
                     {t.gallery_item.media_type === 'image' ? (
                       <img
                         src={t.gallery_item.media_url}
@@ -58,15 +60,15 @@ export default function Testimonials() {
                       <video src={t.gallery_item.media_url} controls className="w-full h-full object-cover" />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
-                        <Film size={24} className="text-white/70" />
+                        <Film size={32} className="text-white/70" />
                       </div>
                     )}
                   </div>
                 )}
-                <div className="p-6 flex-1 flex flex-col border-l-4 border-orange-600">
-                  <Quote size={18} className="text-orange-600 mb-3" />
+                <div className="p-5 border-l-4 border-orange-600">
+                  <Quote size={16} className="text-orange-600 mb-2" />
                   {t.quote && (
-                    <p className="text-gray-600 text-sm leading-relaxed flex-1 mb-6">{t.quote}</p>
+                    <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3">{t.quote}</p>
                   )}
                   <div>
                     <p className="font-display font-semibold text-gray-900">{t.name}</p>
@@ -86,34 +88,32 @@ function FeaturedTestimonial({ testimonial: t }) {
   const hasMedia = Boolean(t.gallery_item);
 
   return (
-    <div className="bg-white border border-gray-100 rounded-lg overflow-hidden">
-      <div className={`flex flex-col ${hasMedia ? 'lg:flex-row' : ''}`}>
-        {hasMedia && (
-          <div className="w-full lg:w-1/2 h-64 lg:h-auto bg-gray-900">
-            {t.gallery_item.media_type === 'image' ? (
-              <img
-                src={t.gallery_item.media_url}
-                alt={t.name}
-                className="w-full h-full object-cover"
-              />
-            ) : t.gallery_item.is_uploaded_video ? (
-              <video src={t.gallery_item.media_url} controls className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <Film size={32} className="text-white/70" />
-              </div>
-            )}
-          </div>
-        )}
-        <div className={`p-8 md:p-12 flex flex-col justify-center border-orange-600 ${hasMedia ? 'lg:w-1/2 border-t-4 lg:border-t-0 lg:border-l-4' : 'border-t-4'}`}>
-          <Quote size={28} className="text-orange-600 mb-4" />
-          {t.quote && (
-            <p className="text-gray-700 text-lg md:text-xl leading-relaxed mb-6">{t.quote}</p>
+    <div className="w-full bg-white border border-gray-100 rounded-lg overflow-hidden">
+      {hasMedia && (
+        <div className="w-full h-72 md:h-96 bg-gray-900">
+          {t.gallery_item.media_type === 'image' ? (
+            <img
+              src={t.gallery_item.media_url}
+              alt={t.name}
+              className="w-full h-full object-cover"
+            />
+          ) : t.gallery_item.is_uploaded_video ? (
+            <video src={t.gallery_item.media_url} controls className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Film size={48} className="text-white/70" />
+            </div>
           )}
-          <div>
-            <p className="font-display font-semibold text-gray-900 text-lg">{t.name}</p>
-            {t.role && <p className="text-sm text-gray-500">{t.role}</p>}
-          </div>
+        </div>
+      )}
+      <div className="p-8 md:p-16 border-orange-600 border-t-4">
+        <Quote size={36} className="text-orange-600 mb-6" />
+        {t.quote && (
+          <p className="text-gray-700 text-xl md:text-2xl leading-relaxed mb-8">{t.quote}</p>
+        )}
+        <div>
+          <p className="font-display font-semibold text-gray-900 text-xl">{t.name}</p>
+          {t.role && <p className="text-gray-500 mt-1">{t.role}</p>}
         </div>
       </div>
     </div>

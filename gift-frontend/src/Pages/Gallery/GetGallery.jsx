@@ -662,6 +662,13 @@ export default function GalleryManagement() {
                           <Eye size={16} />
                         </button>
                         <button
+                          onClick={() => navigate(`/dashboard/editGallery/${item.id}`)}
+                          className="text-orange-600 hover:text-orange-900"
+                          title="Edit item"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
                           onClick={() => confirmDelete(item.id)}
                           className="text-orange-600 hover:text-orange-900"
                           title="Delete item"

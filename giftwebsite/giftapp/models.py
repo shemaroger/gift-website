@@ -12,8 +12,6 @@ import logging
 from django.dispatch import receiver
 from django.db.models.signals import post_migrate, post_save
 from django.utils.text import slugify
-from .storage import LocalVideoStorage
-
 logger = logging.getLogger(__name__)
 
 def default_token_expires():
@@ -417,7 +415,6 @@ class GalleryItem(models.Model):
     video_url = models.URLField(blank=True, null=True)
     video_file = models.FileField(
         upload_to='gallery/videos/',
-        storage=LocalVideoStorage(),
         blank=True,
         null=True
     )

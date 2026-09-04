@@ -3,11 +3,11 @@ import axios from "axios";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 
+// No default Content-Type here — see api.jsx for why (it silently breaks
+// FormData/file uploads). This client is read-only today, but don't
+// reintroduce the footgun if that changes.
 const api = axios.create({
     baseURL: API_BASE_URL,
-    headers: {
-        "Content-Type": "application/json",
-    },
 });
 
 

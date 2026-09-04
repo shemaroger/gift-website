@@ -3,11 +3,14 @@ import axios from "axios";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
 
+// No default Content-Type header here on purpose: axios only auto-detects
+// FormData bodies (and lets the browser attach the correct multipart
+// boundary) when no Content-Type is already set. A forced default of
+// "application/json" silently breaks every file upload across the app —
+// axios serializes the FormData back into JSON instead, dropping the file.
+// Axios still defaults plain object payloads to application/json on its own.
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 api.interceptors.request.use(
@@ -279,6 +282,23 @@ export const createAds = async (AdsData) => {
     };
   }
 };
+
+// Starts the one-time Google Drive OAuth flow: gets a Google consent-screen
+// URL from the (JWT-authenticated, admin-only) backend, then the caller
+// should navigate the browser there directly (window.location.assign) so
+// Google can redirect back to the backend's callback route.
+export const startGoogleDriveAuth = async () => {
+  try {
+    const response = await api.post("/google-drive/auth/start/");
+    return { success: true, authorizationUrl: response.data.authorization_url };
+  } catch (error) {
+    const data = error.response?.data;
+    return {
+      success: false,
+      message: data?.detail || data?.error || "Failed to start Google Drive authorization.",
+    };
+  }
+};
 export const CreateCategortblogs = async (categoryData) => {
   try {
     const response = await api.post("/categories/", categoryData);
@@ -459,9 +479,12 @@ export const fetchGalleryItems = async () => {
   }
 };
 
-export const createGalleryItem = async (galleryData) => {
+// onUploadProgress: optional axios callback, (ProgressEvent) => void — lets
+// the caller show a real progress bar for large video uploads instead of a
+// static spinner, since those genuinely take a while to transfer.
+export const createGalleryItem = async (galleryData, onUploadProgress) => {
   try {
-    const response = await api.post("/gallery/", galleryData);
+    const response = await api.post("/gallery/", galleryData, { onUploadProgress });
     if (response.status >= 200 && response.status < 300) {
       return { success: true, message: "Gallery item created successfully!" };
     } else {
@@ -793,9 +816,21 @@ export const deleteEvent = async (id) => {
   }
 };
 
-export const updateGalleryItem = async (id, galleryData) => {
+export const fetchGalleryItemById = async (id) => {
   try {
-    const response = await api.put(`/gallery/${id}/`, galleryData);
+    const response = await api.get(`/gallery/${id}/`);
+    return { success: true, data: response.data };
+  } catch (error) {
+    return {
+      success: false,
+      message: error.response?.data?.detail || "Error fetching gallery item.",
+    };
+  }
+};
+
+export const updateGalleryItem = async (id, galleryData, onUploadProgress) => {
+  try {
+    const response = await api.put(`/gallery/${id}/`, galleryData, { onUploadProgress });
     return { success: true, message: "Gallery item updated successfully!", data: response.data };
   } catch (error) {
     return {

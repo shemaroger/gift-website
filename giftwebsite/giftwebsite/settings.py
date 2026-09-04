@@ -19,8 +19,6 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
     'giftapp',
-    'cloudinary',
-    'cloudinary_storage',
 ]
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -54,6 +52,8 @@ AUTH_USER_MODEL = 'giftapp.User'
 
 
 REST_FRAMEWORK = {
+    'EXCEPTION_HANDLER': 'giftapp.gdrive_storage.drf_exception_handler',
+
     # Authentication
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -127,6 +127,14 @@ CORS_ALLOWED_ORIGINS = [
     "https://giftrwa.org",
 ]
 
+# Where the React admin UI lives — used only to build the redirect target
+# after the Google Drive OAuth callback completes (never carries a token).
+FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
+
+# This backend's own public base URL — used to build the /api/media/drive/
+# proxy links returned by GoogleDriveStorage.url() (see gdrive_storage.py).
+BACKEND_BASE_URL = config('BACKEND_BASE_URL', default='http://localhost:8000')
+
 CORS_ALLOW_METHODS = [
     "DELETE",
     "GET",
@@ -193,13 +201,18 @@ USE_I18N = True
 
 USE_TZ = True
 
-CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': config('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': config('CLOUDINARY_API_KEY'),
-    'API_SECRET': config('CLOUDINARY_API_SECRET'),
-}
+# Google Drive, via OAuth 2.0 against a personal Google account (service
+# accounts have no storage quota on non-Workspace Drive, so they can't own
+# uploaded files). GOOGLE_DRIVE_TOKEN_FILE holds the refresh token produced
+# by the one-time consent flow at GET /api/google-drive/auth/ — it lives
+# outside the repo and is gitignored.
+GOOGLE_OAUTH_CLIENT_ID = config('GOOGLE_OAUTH_CLIENT_ID')
+GOOGLE_OAUTH_CLIENT_SECRET = config('GOOGLE_OAUTH_CLIENT_SECRET')
+GOOGLE_OAUTH_REDIRECT_URI = config('GOOGLE_OAUTH_REDIRECT_URI')
+GOOGLE_DRIVE_TOKEN_FILE = config('GOOGLE_DRIVE_TOKEN_FILE')
+GOOGLE_DRIVE_ROOT_FOLDER_NAME = config('GOOGLE_DRIVE_ROOT_FOLDER_NAME', default='GiftApp Storage')
 
-DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+DEFAULT_FILE_STORAGE = 'giftapp.gdrive_storage.GoogleDriveStorage'
 
 
 # For file uploads

@@ -12,11 +12,14 @@ import {
   Eye,
   UserCheck,
   UserX,
-  Clock
+  Clock,
+  HardDrive
 } from 'lucide-react';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 // Import your actual API functions
-import { fetchAnnouncements, fetchRole, fetchUsers, fetchAds, fetchblogs, fetchGalleryItems, fetchEvents } from "../../api";
+import { fetchAnnouncements, fetchRole, fetchUsers, fetchAds, fetchblogs, fetchGalleryItems, fetchEvents, startGoogleDriveAuth } from "../../api";
 
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -29,6 +32,44 @@ const Dashboard = () => {
   const [blogs, setBlogs] = useState([]);
   const [galleryItems, setGalleryItems] = useState([]);
   const [events, setEvents] = useState([]);
+  const [connectingDrive, setConnectingDrive] = useState(false);
+
+  // Google redirects back here (see GoogleDriveCallbackView) with a plain
+  // status flag in the query string, never a token. Surface it once, then
+  // clean the URL so a page refresh doesn't re-show the toast.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const gdriveStatus = params.get('gdrive');
+    if (!gdriveStatus) return;
+
+    if (gdriveStatus === 'success') {
+      toast.success('Google Drive connected successfully.');
+    } else {
+      const reason = params.get('reason');
+      const messages = {
+        missing_params: 'Google did not return the expected authorization data.',
+        invalid_state: 'The authorization request expired or was already used. Please try again.',
+        exchange_failed: 'Failed to complete the Google Drive authorization. Please try again.',
+      };
+      toast.error(messages[reason] || 'Failed to connect Google Drive.');
+    }
+
+    params.delete('gdrive');
+    params.delete('reason');
+    const newSearch = params.toString();
+    window.history.replaceState({}, '', window.location.pathname + (newSearch ? `?${newSearch}` : ''));
+  }, []);
+
+  const handleConnectGoogleDrive = async () => {
+    setConnectingDrive(true);
+    const result = await startGoogleDriveAuth();
+    if (!result.success) {
+      toast.error(result.message);
+      setConnectingDrive(false);
+      return;
+    }
+    window.location.assign(result.authorizationUrl);
+  };
 
   useEffect(() => {
     const loadData = async () => {
@@ -225,6 +266,29 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
+
+        {/* Google Drive Storage Connection */}
+        <div className="bg-white rounded-xl border border-gray-100 p-6 mb-8 flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="p-3 rounded-lg bg-orange-600 mr-4">
+              <HardDrive className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg font-display font-semibold text-gray-900">Google Drive Storage</h3>
+              <p className="text-sm text-gray-600">
+                Authorize the Google account that image/video uploads are stored in.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={handleConnectGoogleDrive}
+            disabled={connectingDrive}
+            className={`px-4 py-2 text-sm rounded-lg text-white flex items-center ${connectingDrive ? 'bg-orange-400 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-700'
+              }`}
+          >
+            {connectingDrive ? 'Redirecting…' : 'Connect Google Drive'}
+          </button>
+        </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

@@ -68,8 +68,19 @@ const EventForm = () => {
     e.preventDefault();
 
     try {
-      console.log("The data", formData);
-      const result = await createEvent(formData);
+      // Files can't survive a plain-object JSON post (axios turns a File
+      // into "{}" when it JSON-stringifies the payload), so build real
+      // multipart FormData here instead of passing formData as-is.
+      const submitData = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === 'image' || key === 'banner') {
+          if (value) submitData.append(key, value);
+        } else {
+          submitData.append(key, value);
+        }
+      });
+
+      const result = await createEvent(submitData);
 
       if (result.success) {
         toast.success('Event created successfully!');

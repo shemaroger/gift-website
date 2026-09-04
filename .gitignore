@@ -3,3 +3,5 @@ gift-frontend/.env
 *.pyc
 __pycache__/
 giftwebsite/media/
+giftwebsite/*credentials*.json
+giftwebsite/secrets/

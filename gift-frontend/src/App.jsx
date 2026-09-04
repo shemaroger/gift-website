@@ -31,6 +31,7 @@ import AddEventRegistration from './Pages/Events/AddEventRegistration';
 import AddAnnouncement from './Pages/Announcements/AddAnnouncement';
 import GetGallery from './Pages/Gallery/GetGallery';
 import AddGallery from './Pages/Gallery/AddGallery';
+import EditGallery from './Pages/Gallery/EditGallery';
 import GalleryCategory from './Pages/Gallery/GalleryCategory';
 import Testimonials from './Pages/Testimonials';
 import GetTestimonials from './Pages/Testimonials/GetTestimonials';
@@ -101,6 +102,7 @@ function AnimatedRoutes() {
           <Route path="addAnnouncement" element={<AddAnnouncement />} />
           <Route path="getGallery" element={<GetGallery />} />
           <Route path="addGallery" element={<AddGallery />} />
+          <Route path="editGallery/:id" element={<EditGallery />} />
           <Route path="galleryCategory" element={<GalleryCategory />} />
           <Route path="getTestimonials" element={<GetTestimonials />} />
           <Route path="addTestimonial" element={<AddTestimonial />} />

@@ -26,7 +26,18 @@ from rest_framework.pagination import PageNumberPagination
 from PIL import Image
 from io import BytesIO
 from django.core.files.base import ContentFile
-import cloudinary.exceptions
+from django.shortcuts import redirect
+from django.http import StreamingHttpResponse, HttpResponse
+from django.core.cache import cache
+from .gdrive_storage import (
+    GoogleDriveError,
+    InvalidOAuthState,
+    get_authorization_url,
+    exchange_code_for_token,
+    generate_oauth_state,
+    consume_oauth_state,
+    get_drive_client,
+)
 
 
 User = get_user_model()
@@ -570,7 +581,7 @@ class BlogPostListCreateAPIView(APIView):
         if serializer.is_valid():
             try:
                 serializer.save(author=request.user)
-            except cloudinary.exceptions.Error as e:
+            except GoogleDriveError as e:
                 return Response(
                     {'error': f'Upload failed: the image was rejected by media storage ({e}). Please try again.'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -601,7 +612,7 @@ class BlogPostRetrieveUpdateDestroyAPIView(APIView):
         if serializer.is_valid():
             try:
                 serializer.save()
-            except cloudinary.exceptions.Error as e:
+            except GoogleDriveError as e:
                 return Response(
                     {'error': f'Upload failed: the image was rejected by media storage ({e}). Please try again.'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -737,7 +748,7 @@ class BlogPostDetailAPIView(APIView):
         if serializer.is_valid():
             try:
                 serializer.save()
-            except cloudinary.exceptions.Error as e:
+            except GoogleDriveError as e:
                 return Response(
                     {'error': f'Upload failed: the image was rejected by media storage ({e}). Please try again.'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -865,7 +876,7 @@ class GalleryItemListCreateAPI(APIView):
             if serializer.is_valid():
                 try:
                     item = serializer.save(uploaded_by=request.user)
-                except cloudinary.exceptions.Error as e:
+                except GoogleDriveError as e:
                     return Response(
                         {'error': f'Upload failed: the file was rejected by media storage ({e}). It may be too large for a single upload.'},
                         status=status.HTTP_400_BAD_REQUEST
@@ -889,7 +900,7 @@ class GalleryItemListCreateAPI(APIView):
             if serializer.is_valid():
                 try:
                     item = serializer.save(uploaded_by=request.user)
-                except cloudinary.exceptions.Error as e:
+                except GoogleDriveError as e:
                     errors.append({
                         'file': file.name,
                         'errors': {'error': f'Upload failed: rejected by media storage ({e}). It may be too large.'}
@@ -973,7 +984,7 @@ class GalleryItemDetailAPI(APIView):
         if serializer.is_valid():
             try:
                 updated_item = serializer.save()
-            except cloudinary.exceptions.Error as e:
+            except GoogleDriveError as e:
                 return Response(
                     {'error': f'Upload failed: the file was rejected by media storage ({e}). It may be too large for a single upload.'},
                     status=status.HTTP_400_BAD_REQUEST
@@ -1682,3 +1693,146 @@ class ContactBulkUpdateStatusView(APIView):
             'message': f'Updated {updated_count} contacts',
             'updated_count': updated_count
         })
+
+
+class GoogleDriveAuthStartView(APIView):
+    """
+    POST /api/google-drive/auth/start/
+
+    Admin-only, called through the app's normal JWT-authenticated Axios
+    client (not a raw browser navigation, which can't carry the JWT header).
+    Returns a Google consent-screen URL for the frontend to navigate the
+    browser to via window.location.assign(...); it does not redirect itself.
+
+    `state` is a one-time, admin-scoped token (see
+    gdrive_storage.generate_oauth_state) that the callback below must
+    present unmodified to prove the code it receives corresponds to an
+    auth-start call that was itself gated by admin auth — the callback
+    endpoint has to stay open to anonymous requests, since Google (not our
+    frontend) is what calls it.
+    """
+    permission_classes = [IsAuthenticated, IsAdminUser]
+
+    def post(self, request):
+        state = generate_oauth_state(request.user.id)
+        auth_url, _ = get_authorization_url(state=state)
+        return Response({'authorization_url': auth_url})
+
+
+class GoogleDriveCallbackView(APIView):
+    """
+    GET /api/google-drive/callback/
+
+    Google redirects the bare browser here with `code` and `state` after
+    the admin grants consent — it never carries the app's JWT, so this
+    endpoint must accept anonymous requests and rely entirely on `state`
+    (validated via gdrive_storage.consume_oauth_state: signature, expiry,
+    single-use, and the admin binding) for authorization. On success/failure
+    it redirects back into the React admin UI with a plain status flag in
+    the query string — never a token of any kind.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        frontend_url = settings.FRONTEND_URL.rstrip('/')
+        return_to = f'{frontend_url}/dashboard/adminDashboard'
+
+        state = request.GET.get('state')
+        code = request.GET.get('code')
+
+        if not code or not state:
+            return redirect(f'{return_to}?gdrive=error&reason=missing_params')
+
+        try:
+            consume_oauth_state(state)
+        except InvalidOAuthState as e:
+            logger.warning(f"Google Drive OAuth callback rejected: {e}")
+            return redirect(f'{return_to}?gdrive=error&reason=invalid_state')
+
+        try:
+            exchange_code_for_token(code, state=state)
+        except Exception as e:
+            logger.error(f"Google Drive OAuth exchange failed: {e}", exc_info=True)
+            return redirect(f'{return_to}?gdrive=error&reason=exchange_failed')
+
+        return redirect(f'{return_to}?gdrive=success')
+
+
+class GoogleDriveMediaProxyView(APIView):
+    """
+    GET /api/media/drive/<file_id>/
+
+    Streams a Drive file's bytes through our own backend rather than
+    pointing browsers at drive.google.com directly — Google's public
+    "uc?export=view" links are unreliable for <img>/<video> embedding
+    (intermittently blocked by anti-hotlink heuristics even on files
+    shared "anyone with the link"). This is what GoogleDriveStorage.url()
+    now returns for every image/video field across the app.
+
+    Public (no auth) since it serves the same images/videos the public
+    site already shows on Ads, Gallery, Blog, Events, etc. Streams in
+    fixed-size chunks rather than buffering the whole file in memory,
+    which matters for the larger end of gallery video uploads.
+
+    Small/medium files (images, thumbnails — anything under
+    CACHEABLE_MAX_BYTES) are additionally cached in Django's in-process
+    cache after first fetch, so the *second* viewer (not just a repeat
+    visit by the *same* browser, which Cache-Control already covers)
+    skips the Drive round trip too. Videos and anything oversized are
+    always streamed straight through — never buffered into memory or
+    written to local disk, keeping the "no permanent local storage"
+    requirement intact.
+    """
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    CACHE_KEY_PREFIX = 'gdrive_media:'
+    CACHEABLE_MAX_BYTES = 10 * 1024 * 1024  # 10MB
+    CACHE_TTL_SECONDS = 86400
+
+    def get(self, request, file_id):
+        cache_key = f'{self.CACHE_KEY_PREFIX}{file_id}'
+        cached = cache.get(cache_key)
+        if cached is not None:
+            content_type, data = cached
+            response = HttpResponse(data, content_type=content_type)
+            response['Cache-Control'] = 'public, max-age=31536000, immutable'
+            return response
+
+        client = get_drive_client()
+        try:
+            # One Drive round trip, not two: Content-Type/Content-Length come
+            # straight off this response's own headers, instead of a separate
+            # files.get metadata call before it.
+            drive_response = client.stream_download(file_id)
+        except GoogleDriveError as e:
+            return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
+
+        content_type = drive_response.headers.get('Content-Type', 'application/octet-stream')
+        content_length = drive_response.headers.get('Content-Length')
+        is_cacheable = (
+            not content_type.startswith('video/')
+            and (content_length is None or int(content_length) <= self.CACHEABLE_MAX_BYTES)
+        )
+
+        if is_cacheable:
+            data = drive_response.content
+            cache.set(cache_key, (content_type, data), timeout=self.CACHE_TTL_SECONDS)
+            response = HttpResponse(data, content_type=content_type)
+            response['Cache-Control'] = 'public, max-age=31536000, immutable'
+            return response
+
+        def chunks():
+            for chunk in drive_response.iter_content(chunk_size=256 * 1024):
+                if chunk:
+                    yield chunk
+
+        response = StreamingHttpResponse(chunks(), content_type=content_type)
+        if content_length:
+            response['Content-Length'] = content_length
+        # Drive file content is immutable for a given file id in this app
+        # (uploads always create a new file rather than overwriting), so
+        # this is safe to cache aggressively.
+        response['Cache-Control'] = 'public, max-age=31536000, immutable'
+        return response

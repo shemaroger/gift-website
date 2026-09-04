@@ -187,54 +187,44 @@ const Events = () => {
             </div>
           </div>
 
-          {/* Events Grid - 4 per row, 2 rows = 8 events per page */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 justify-items-center">
+          {/* Events Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-10">
             {currentEvents.map((event) => (
-              <div key={event.id} className="w-full max-w-sm">
-                <div className="bg-white border border-gray-100 rounded-lg p-6 h-full flex flex-col">
+              <div
+                key={event.id}
+                className="cursor-pointer group"
+                onClick={() => handleReadMore(event.uuid)}
+              >
+                <div className="rounded-lg overflow-hidden mb-4">
                   <img
                     src={event.image || "/images/event-placeholder.jpg"}
                     alt={event.title}
-                    className="rounded-lg h-48 w-full object-cover"
+                    className="h-56 w-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
-                  <div className="flex-1 flex flex-col">
-                    <h3 className="text-lg font-bold mt-4 mb-2">{event.title}</h3>
-                    <p className="text-gray-600 text-sm mt-2 line-clamp-3 flex-1">
-                      {event.description}
-                    </p>
+                </div>
 
-                    <div className="mt-auto pt-4">
-                      <div className="flex items-center text-sm mb-2">
-                        <Calendar className="w-4 h-4 mr-1 text-orange-500" />
-                        <span className="text-gray-700">
-                          {formatDisplayDate(event.start_date)}
-                          {event.end_date && new Date(event.start_date).toDateString() !== new Date(event.end_date).toDateString() && (
-                            <span> - {formatDisplayDate(event.end_date)}</span>
-                          )}
-                        </span>
-                      </div>
+                <div className="flex items-center gap-3 mb-2">
+                  <span className="bg-orange-600 text-white text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wide">
+                    {event.event_type === "online" ? "Online" : event.event_type || "Event"}
+                  </span>
+                  <span className="text-gray-500 text-xs">
+                    {formatDisplayDate(event.start_date)}
+                  </span>
+                </div>
 
-                      <div className="flex items-center text-sm mb-4">
-                        {event.event_type === "online" ? (
-                          <Globe className="w-4 h-4 mr-1 text-blue-500" />
-                        ) : (
-                          <MapPin className="w-4 h-4 mr-1 text-green-500" />
-                        )}
-                        <span className="text-gray-700">
-                          {event.event_type === "online"
-                            ? "Online Event"
-                            : event.location}
-                        </span>
-                      </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors line-clamp-2">
+                  {event.title}
+                </h3>
 
-                      <button
-                        className="w-full bg-orange-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-orange-700 transition-colors"
-                        onClick={() => handleReadMore(event.uuid)}
-                      >
-                        Read More
-                      </button>
-                    </div>
-                  </div>
+                <div className="flex items-center text-sm text-gray-500">
+                  {event.event_type === "online" ? (
+                    <Globe className="w-4 h-4 mr-1 flex-shrink-0" />
+                  ) : (
+                    <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+                  )}
+                  <span className="truncate">
+                    {event.event_type === "online" ? "Online Event" : event.location}
+                  </span>
                 </div>
               </div>
             ))}

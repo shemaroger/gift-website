@@ -27,6 +27,7 @@ export default function AddGalleryItem() {
   const [isActive, setIsActive] = useState(true);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [imagePreview, setImagePreview] = useState(null);
@@ -140,6 +141,7 @@ export default function AddGalleryItem() {
     }
 
     setLoading(true);
+    setUploadProgress(0);
     setError(null);
 
     try {
@@ -173,7 +175,16 @@ export default function AddGalleryItem() {
       }
 
       // Submit the form
-      await createGalleryItem(formData);
+      const result = await createGalleryItem(formData, (progressEvent) => {
+        if (progressEvent.total) {
+          setUploadProgress(Math.round((progressEvent.loaded / progressEvent.total) * 100));
+        }
+      });
+      if (!result.success) {
+        toast.error(result.message || 'Failed to create gallery item.');
+        setError(result.message || 'Failed to create gallery item.');
+        return;
+      }
       setSuccess(true);
       toast.success("Gallery item created successfully!")
 
@@ -197,6 +208,7 @@ export default function AddGalleryItem() {
       setError(err.response?.data?.message || "Failed to create gallery item. Please try again.");
     } finally {
       setLoading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -601,30 +613,46 @@ export default function AddGalleryItem() {
           </div>
 
           {/* Form Actions */}
-          <div className="px-6 py-4 bg-gray-50 border-t flex justify-end space-x-3">
-            <a
-              href="/dashboard/gallery"
-              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-            >
-              Cancel
-            </a>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 flex items-center"
-            >
-              {loading ? (
-                <>
-                  <div className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save size={16} className="mr-2" />
-                  Save Gallery Item
-                </>
-              )}
-            </button>
+          <div className="px-6 py-4 bg-gray-50 border-t">
+            {loading && (mediaType === 'video' || uploadProgress > 0) && (
+              <div className="mb-3">
+                <div className="flex justify-between text-xs text-gray-600 mb-1">
+                  <span>Uploading{mediaType === 'video' ? ' video' : ''}...</span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-orange-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              </div>
+            )}
+            <div className="flex justify-end space-x-3">
+              <a
+                href="/dashboard/gallery"
+                className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+              >
+                Cancel
+              </a>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 flex items-center"
+              >
+                {loading ? (
+                  <>
+                    <div className="mr-2 h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    {uploadProgress > 0 && uploadProgress < 100 ? `Uploading ${uploadProgress}%...` : 'Saving...'}
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} className="mr-2" />
+                    Save Gallery Item
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </form>
       </div>
