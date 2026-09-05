@@ -423,21 +423,27 @@ class GoogleDriveClient:
             fileId=file_id, fields="id, name, mimeType, size, webViewLink, webContentLink, createdTime"
         ).execute()
 
-    def stream_download(self, file_id):
+    def stream_download(self, file_id, range_header=None):
         """Returns a `requests.Response` streamed (not buffered) from Drive's
         alt=media endpoint, for piping straight into a Django
         StreamingHttpResponse without loading the whole file into memory —
         important for large (up to hundreds of MB) videos. Skips building the
         full googleapiclient discovery-based service (unnecessary overhead
         for a plain authenticated GET) — just refreshes credentials and
-        makes the request directly."""
+        makes the request directly.
+
+        `range_header`, if given, is forwarded verbatim to Drive (which
+        supports byte-range requests) so the proxy can honor a browser's
+        Range request — required for <video> playback/seeking; without it,
+        browsers won't reliably play a large video served as one big 200."""
         credentials = self._get_valid_credentials()
         session = AuthorizedSession(credentials)
         url = f"https://www.googleapis.com/drive/v3/files/{file_id}"
-        response = session.get(url, params={"alt": "media"}, stream=True)
+        headers = {"Range": range_header} if range_header else None
+        response = session.get(url, params={"alt": "media"}, stream=True, headers=headers)
         if response.status_code == 404:
             raise GoogleDriveError(f"File {file_id} not found on Drive.")
-        if not response.ok:
+        if not response.ok and response.status_code != 206:
             raise GoogleDriveError(f"Drive download failed with status {response.status_code}.")
         return response
 

@@ -1792,35 +1792,48 @@ class GoogleDriveMediaProxyView(APIView):
     CACHE_TTL_SECONDS = 86400
 
     def get(self, request, file_id):
-        cache_key = f'{self.CACHE_KEY_PREFIX}{file_id}'
-        cached = cache.get(cache_key)
-        if cached is not None:
-            content_type, data = cached
-            response = HttpResponse(data, content_type=content_type)
-            response['Cache-Control'] = 'public, max-age=31536000, immutable'
-            return response
+        range_header = request.META.get('HTTP_RANGE')
+
+        # A Range request always goes straight through — the cached path
+        # below only ever holds a full file's bytes, and (in practice) only
+        # videos get Range requests anyway, which are excluded from caching.
+        if not range_header:
+            cache_key = f'{self.CACHE_KEY_PREFIX}{file_id}'
+            cached = cache.get(cache_key)
+            if cached is not None:
+                content_type, data = cached
+                response = HttpResponse(data, content_type=content_type)
+                response['Cache-Control'] = 'public, max-age=31536000, immutable'
+                response['Accept-Ranges'] = 'bytes'
+                return response
 
         client = get_drive_client()
         try:
             # One Drive round trip, not two: Content-Type/Content-Length come
             # straight off this response's own headers, instead of a separate
-            # files.get metadata call before it.
-            drive_response = client.stream_download(file_id)
+            # files.get metadata call before it. Range is forwarded to Drive
+            # (which supports byte-range requests) so <video> playback and
+            # seeking work — without honoring Range, browsers won't reliably
+            # play a large video served as one big 200 response.
+            drive_response = client.stream_download(file_id, range_header=range_header)
         except GoogleDriveError as e:
             return Response({'error': str(e)}, status=status.HTTP_404_NOT_FOUND)
 
         content_type = drive_response.headers.get('Content-Type', 'application/octet-stream')
         content_length = drive_response.headers.get('Content-Length')
+        is_partial = drive_response.status_code == 206
         is_cacheable = (
-            not content_type.startswith('video/')
+            not is_partial
+            and not content_type.startswith('video/')
             and (content_length is None or int(content_length) <= self.CACHEABLE_MAX_BYTES)
         )
 
         if is_cacheable:
             data = drive_response.content
-            cache.set(cache_key, (content_type, data), timeout=self.CACHE_TTL_SECONDS)
+            cache.set(f'{self.CACHE_KEY_PREFIX}{file_id}', (content_type, data), timeout=self.CACHE_TTL_SECONDS)
             response = HttpResponse(data, content_type=content_type)
             response['Cache-Control'] = 'public, max-age=31536000, immutable'
+            response['Accept-Ranges'] = 'bytes'
             return response
 
         def chunks():
@@ -1828,9 +1841,17 @@ class GoogleDriveMediaProxyView(APIView):
                 if chunk:
                     yield chunk
 
-        response = StreamingHttpResponse(chunks(), content_type=content_type)
+        response = StreamingHttpResponse(
+            chunks(),
+            status=206 if is_partial else 200,
+            content_type=content_type,
+        )
         if content_length:
             response['Content-Length'] = content_length
+        content_range = drive_response.headers.get('Content-Range')
+        if content_range:
+            response['Content-Range'] = content_range
+        response['Accept-Ranges'] = 'bytes'
         # Drive file content is immutable for a given file id in this app
         # (uploads always create a new file rather than overwriting), so
         # this is safe to cache aggressively.

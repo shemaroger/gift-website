@@ -1,7 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchblogByUuid } from "../publicApi";
-import { Calendar, Tag, FileText, Sparkles, ArrowLeft } from 'lucide-react';
+import { Calendar, Tag, Clock, User, Sparkles, ArrowLeft } from 'lucide-react';
+
+const WORDS_PER_MINUTE = 200;
+
+function estimateReadingTime(html) {
+  if (!html) return null;
+  const text = html.replace(/<[^>]*>/g, ' ');
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  if (!words) return null;
+  return Math.max(1, Math.round(words / WORDS_PER_MINUTE));
+}
 
 const BlogDetail = () => {
   const { id } = useParams();
@@ -57,11 +67,11 @@ const BlogDetail = () => {
 
   if (!blog) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-green-900 px-4 text-center">
-        <h1 className="font-display text-3xl md:text-4xl font-semibold text-white mb-4">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4 text-center">
+        <h1 className="font-display text-3xl md:text-4xl font-semibold text-gray-900 mb-4">
           Blog Not Found
         </h1>
-        <p className="text-green-50 max-w-md mb-8">
+        <p className="text-gray-600 max-w-md mb-8">
           The blog post you're looking for doesn't exist.
         </p>
         <button
@@ -85,6 +95,8 @@ const BlogDetail = () => {
     });
   };
 
+  const readingTime = estimateReadingTime(blog.content);
+
   return (
     <div className='mt-28 md:mt-32'>
       {/* Hero Section */}
@@ -103,6 +115,16 @@ const BlogDetail = () => {
           </p>
 
           <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-2 mt-4 text-sm text-gray-500">
+            {blog.author_details && (blog.author_details.first_name || blog.author_details.username) && (
+              <div className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                <span>
+                  {blog.author_details.first_name
+                    ? `${blog.author_details.first_name} ${blog.author_details.last_name || ''}`.trim()
+                    : blog.author_details.username}
+                </span>
+              </div>
+            )}
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4" />
               <span>{formatDate(blog.published_date || blog.created_at)}</span>
@@ -113,10 +135,12 @@ const BlogDetail = () => {
                 <span>{blog.category_details.name}</span>
               </div>
             )}
-            <div className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              <span className="capitalize">{blog.status}</span>
-            </div>
+            {readingTime && (
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                <span>{readingTime} min read</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -125,11 +149,11 @@ const BlogDetail = () => {
       <div className="max-w-4xl mx-auto px-6 py-12">
         {/* Featured Image */}
         {blog.featured_image && (
-          <div className="mb-8">
+          <div className="mb-8 rounded-lg overflow-hidden">
             <img
               src={blog.featured_image}
               alt={blog.title}
-              className="w-full object-cover rounded-lg"
+              className="w-full max-h-[28rem] object-cover"
               onError={(e) => {
                 e.target.style.display = 'none';
               }}
@@ -138,11 +162,8 @@ const BlogDetail = () => {
         )}
 
         {/* Article Content */}
-        <article className="prose prose-lg max-w-none">
-          <div
-            className="text-gray-700 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: blog.content }}
-          />
+        <article className="prose prose-lg max-w-none prose-orange prose-headings:font-display">
+          <div dangerouslySetInnerHTML={{ __html: blog.content }} />
         </article>
 
         {/* Navigation */}

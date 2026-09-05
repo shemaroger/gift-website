@@ -88,8 +88,18 @@ export default function EditBlog() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const payload = { ...formData };
-      if (!payload.featured_image) delete payload.featured_image;
+      // A File can't survive a plain-object JSON put (axios turns it into
+      // "{}" when it JSON-stringifies the payload), so build real
+      // multipart FormData instead — only appending featured_image when a
+      // new one was actually picked.
+      const payload = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === 'featured_image') {
+          if (value) payload.append(key, value);
+        } else {
+          payload.append(key, value);
+        }
+      });
 
       const response = await updateblog(id, payload);
       if (response.success) {

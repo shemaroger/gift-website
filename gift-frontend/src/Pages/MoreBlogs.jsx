@@ -11,7 +11,7 @@ const MoreBlogs = () => {
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [blogsPerPage] = useState(3);
+  const [blogsPerPage] = useState(6);
   const [totalPages, setTotalPages] = useState(0);
 
   // Fetch blogs and categories on component mount
@@ -45,34 +45,30 @@ const MoreBlogs = () => {
 
     fetchData();
   }, [blogsPerPage]);
+
+  // Otherwise a search can leave currentPage pointing past the now-smaller
+  // set of matching results, showing an empty page with working pagination
+  // buttons that go nowhere.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
+
   const handleReadMore = (id) => {
     navigate(`/BlogDetail/${id}`);
   };
-
-  const indexOfLastBlog = currentPage * blogsPerPage;
-  const indexOfFirstBlog = indexOfLastBlog - blogsPerPage;
 
   const filteredBlogs = blogs.filter(blog =>
     blog.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     blog.excerpt?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const currentBlogs = filteredBlogs.slice(indexOfFirstBlog, indexOfLastBlog);
+  // "More Posts" loads cumulatively rather than paging through separate
+  // screens, so currentBlogs always shows everything up to the current page.
+  const currentBlogs = filteredBlogs.slice(0, currentPage * blogsPerPage);
   const actualTotalPages = Math.ceil(filteredBlogs.length / blogsPerPage);
+  const hasMore = currentPage < actualTotalPages;
 
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
-  const nextPage = () => {
-    if (currentPage < actualTotalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const prevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
+  const loadMore = () => setCurrentPage((page) => page + 1);
 
   const getCategoryCounts = () => {
     const counts = {};
@@ -92,8 +88,9 @@ const MoreBlogs = () => {
       .slice(0, 3)
       .map(blog => ({
         id: blog.id,
+        uuid: blog.uuid,
         title: blog.title,
-        category: typeof blog.category === 'object' ? blog.category.name : blog.category,
+        category: blog.category_details?.name,
         image: blog.featured_image
       }));
   };
@@ -130,11 +127,6 @@ const MoreBlogs = () => {
   const recentPosts = getRecentPosts();
   const tags = getTags();
 
-  const pageNumbers = [];
-  for (let i = 1; i <= actualTotalPages; i++) {
-    pageNumbers.push(i);
-  }
-
   return (
     <div className="bg-white mt-28 md:mt-32">
       {/* Hero Section */}
@@ -167,126 +159,84 @@ const MoreBlogs = () => {
       </div>
 
       <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-8 space-y-12">
-            {currentBlogs.length > 0 ? (
-              currentBlogs.map((blog) => (
-                <div
-                  key={blog.id}
-                  className="group flex flex-col md:flex-row md:items-start gap-8 border-b border-gray-100 pb-12"
-                >
-                  <div className="relative w-full md:w-2/5 aspect-video overflow-hidden rounded-lg">
-                    <img
-                      src={blog.featured_image}
-                      alt={blog.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    {typeof blog.category === 'object' && blog.category && (
-                      <span className="absolute top-4 left-4 bg-black/70 text-white px-4 py-1.5 rounded-full text-sm font-medium">
-                        {blog.category.name}
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="w-full md:w-3/5 flex flex-col">
-                    <div className="flex items-center text-sm text-gray-500 mb-3">
-                      <div className="flex items-center">
-                        <svg className="w-4 h-4 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span>
-                          {new Date(blog.published_date || blog.created_at).toLocaleDateString('en-US', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric'
-                          })}
-                        </span>
-                      </div>
-                    </div>
-
-                    <h2 className="text-2xl font-bold mb-3 text-gray-900 group-hover:text-orange-600 transition-colors duration-200 line-clamp-2">
-                      {blog.title}
-                    </h2>
-
-                    <p className="text-gray-600 mb-4 line-clamp-3">{blog.excerpt}</p>
-
-                    <button
-                      className="inline-flex items-center text-sm font-semibold text-orange-600 hover:text-orange-800 transition-colors duration-200 mt-auto group/btn"
-                      onClick={() => handleReadMore(blog.uuid)}
-                    >
-                      Read article
-                      <svg
-                        className="w-5 h-5 ml-1 transform group-hover/btn:translate-x-1 transition-transform duration-200"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                      </svg>
-                    </button>
-                  </div>
+        {/* Post grid */}
+        {currentBlogs.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12 mb-12">
+            {currentBlogs.map((blog) => (
+              <div
+                key={blog.id}
+                className="cursor-pointer group"
+                onClick={() => handleReadMore(blog.uuid)}
+              >
+                <div className="rounded-lg overflow-hidden mb-4">
+                  <img
+                    src={blog.featured_image}
+                    alt={blog.title}
+                    className="aspect-video w-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
-              ))
-            ) : (
-              <div className="bg-gray-50 rounded-lg py-16 text-center">
-                <svg className="w-20 h-20 mx-auto text-gray-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-                <p className="text-2xl text-gray-400 font-light">No blogs found</p>
-                <p className="text-gray-500 mt-2">Try adjusting your search or check back later for new content</p>
+
+                <h2 className="text-lg font-display font-semibold mb-2 text-gray-900 group-hover:text-orange-600 transition-colors duration-200 line-clamp-2">
+                  {blog.title}
+                </h2>
+
+                <div className="text-gray-500 text-xs uppercase tracking-wide mb-2">
+                  <span>
+                    {new Date(blog.published_date || blog.created_at).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric'
+                    })}
+                  </span>
+                  {blog.category_details?.name && (
+                    <>
+                      <span className="mx-1.5">&bull;</span>
+                      <span>{blog.category_details.name}</span>
+                    </>
+                  )}
+                </div>
+
+                <p className="text-gray-600 text-sm mb-3 line-clamp-3">{blog.excerpt}</p>
+
+                <span className="inline-flex items-center gap-1 text-orange-600 font-semibold text-xs uppercase tracking-wide group-hover:text-orange-800 transition-colors duration-200">
+                  Read More
+                  <svg
+                    className="w-3.5 h-3.5 transform group-hover:translate-x-1 transition-transform duration-200"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                  </svg>
+                </span>
               </div>
-            )}
-
-            {/* Pagination */}
-            {filteredBlogs.length > 0 && (
-              <nav className="flex justify-center mt-16 py-8">
-                <div className="flex items-center space-x-1">
-                  <button
-                    onClick={prevPage}
-                    disabled={currentPage === 1}
-                    className={`flex items-center justify-center p-2 rounded-lg ${currentPage === 1
-                      ? 'text-gray-300 cursor-not-allowed'
-                      : 'text-gray-600 hover:bg-gray-100'
-                      } transition-colors duration-200`}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-
-                  {pageNumbers.map(number => (
-                    <button
-                      key={number}
-                      onClick={() => paginate(number)}
-                      className={`w-10 h-10 flex items-center justify-center rounded-lg transition-colors duration-200 ${currentPage === number
-                        ? 'bg-orange-600 text-white font-medium'
-                        : 'text-gray-600 hover:bg-gray-100'
-                        }`}
-                    >
-                      {number}
-                    </button>
-                  ))}
-
-                  <button
-                    onClick={nextPage}
-                    disabled={currentPage === actualTotalPages}
-                    className={`flex items-center justify-center p-2 rounded-lg ${currentPage === actualTotalPages
-                      ? 'text-gray-300 cursor-not-allowed'
-                      : 'text-gray-600 hover:bg-gray-100'
-                      } transition-colors duration-200`}
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              </nav>
-            )}
+            ))}
           </div>
+        ) : (
+          <div className="bg-gray-50 rounded-lg py-16 text-center mb-12">
+            <svg className="w-20 h-20 mx-auto text-gray-300 mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            <p className="text-2xl text-gray-400 font-light">No blogs found</p>
+            <p className="text-gray-500 mt-2">Try adjusting your search or check back later for new content</p>
+          </div>
+        )}
 
+        {/* Load more */}
+        {hasMore && (
+          <div className="flex justify-center mb-16">
+            <button
+              onClick={loadMore}
+              className="px-8 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-full text-sm font-semibold uppercase tracking-wide transition-colors duration-200"
+            >
+              More Posts
+            </button>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Sidebar */}
-          <div className="lg:col-span-4 space-y-8">
+          <div className="lg:col-span-12 grid grid-cols-1 sm:grid-cols-3 gap-8">
             {/* Categories */}
             <div className="bg-gray-50 rounded-lg p-6">
               <h3 className="text-lg font-bold mb-6 text-gray-900 flex items-center">

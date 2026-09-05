@@ -3,42 +3,45 @@ import { Link } from 'react-router-dom';
 import { fetchblogs } from "../../publicApi";
 import { Calendar, ArrowRight } from "lucide-react";
 
-const EventCard = ({ uuid, featured_image, category_details, title, content, created_at }) => (
-  <div className="bg-white border border-gray-100 rounded-lg overflow-hidden flex flex-col h-full">
-    <img
-      src={featured_image}
-      alt={title}
-      className="w-full h-48 object-cover"
-    />
-    <div className="p-6 flex flex-col flex-1">
-      <p className="text-orange-600 text-xs font-semibold uppercase tracking-wide mb-2">
-        {category_details?.name || 'Uncategorized'}
-      </p>
-      <h3 className="font-display text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-      <p className="text-gray-600 text-sm mb-4 flex-1">
-        {content.length > 120
-          ? `${content.substring(0, 120)}...`
-          : content
-        }
-      </p>
+const BlogCard = ({ uuid, featured_image, category_details, title, content, created_at }) => (
+  <Link to={`/BlogDetail/${uuid}`} className="block group">
+    <div className="rounded-lg overflow-hidden mb-4">
+      <img
+        src={featured_image}
+        alt={title}
+        className="h-48 w-full object-cover group-hover:scale-105 transition-transform duration-300"
+      />
+    </div>
+
+    <h3 className="font-display text-lg font-semibold text-gray-900 mb-2 group-hover:text-orange-600 transition-colors line-clamp-2">
+      {title}
+    </h3>
+
+    <div className="text-gray-500 text-xs uppercase tracking-wide mb-2">
       {created_at && (
-        <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
-          <Calendar className="w-3.5 h-3.5" />
-          {new Date(created_at).toLocaleDateString('en-GB', {
-            day: 'numeric',
+        <span>
+          {new Date(created_at).toLocaleDateString('en-US', {
             month: 'long',
+            day: 'numeric',
             year: 'numeric'
           })}
-        </div>
+        </span>
       )}
-      <Link
-        to={`/BlogDetail/${uuid}`}
-        className="inline-flex items-center gap-1 text-orange-600 font-medium text-sm hover:text-orange-700 transition-colors"
-      >
-        Read More <ArrowRight className="w-3.5 h-3.5" />
-      </Link>
+      {category_details?.name && (
+        <>
+          <span className="mx-1.5">&bull;</span>
+          <span>{category_details.name}</span>
+        </>
+      )}
     </div>
-  </div>
+
+    <p className="text-gray-600 text-sm line-clamp-2 mb-3">
+      {content}
+    </p>
+    <span className="inline-flex items-center gap-1 text-orange-600 font-semibold text-xs uppercase tracking-wide">
+      Read More <ArrowRight className="w-3.5 h-3.5" />
+    </span>
+  </Link>
 );
 
 const Blogs = () => {
@@ -75,7 +78,7 @@ const Blogs = () => {
             return blogCreatedDate <= today; // Blogs created today or earlier
           })
           .sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) // Sort by created_at descending (newest first)
-          .slice(0, 4); // Get only the first 4 blogs
+          .slice(0, 3); // One full row at lg:grid-cols-3
 
         setBlogs(filteredBlogs);
         setError(null);
@@ -121,9 +124,9 @@ const Blogs = () => {
           No blogs available at the moment.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {blogs.map((blog, index) => (
-            <EventCard key={blog.id || index} {...blog} />
+            <BlogCard key={blog.id || index} {...blog} />
           ))}
         </div>
       )}

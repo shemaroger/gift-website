@@ -75,9 +75,20 @@ export default function AddBlog() {
   };
 
   const handleSubmit = async () => {
-    console.log("Subbmuted data", formData);
     try {
-      const response = await createblogs(formData)
+      // A File can't survive a plain-object JSON post (axios turns it into
+      // "{}" when it JSON-stringifies the payload), so build real
+      // multipart FormData instead of passing formData as-is.
+      const payload = new FormData();
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key === 'featured_image') {
+          if (value) payload.append(key, value);
+        } else {
+          payload.append(key, value);
+        }
+      });
+
+      const response = await createblogs(payload)
       if (response.success) {
         toast.success("Blog post created successfully!");
         setFormData({
