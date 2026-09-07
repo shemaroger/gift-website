@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: giftrwa_db
       POSTGRES_USER: giftrwa_user
-      POSTGRES_PASSWORD: Test@123
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -25,18 +25,27 @@ services:
     container_name: giftrwa_backend
     restart: unless-stopped
     environment:
-      SECRET_KEY: your-very-secret-key-change-this-in-production
+      SECRET_KEY: ${SECRET_KEY}
       DEBUG: "False"
       DB_NAME: giftrwa_db
       DB_USER: giftrwa_user
-      DB_PASSWORD: Test@123
+      DB_PASSWORD: ${DB_PASSWORD}
       DB_HOST: db
       DB_PORT: "5432"
-      EMAIL_HOST_USER: shemaroger60@gmail.com
-      EMAIL_HOST_PASSWORD: uwcq soko gfkc zdri
-      CLOUDINARY_CLOUD_NAME: your_cloud_name
-      CLOUDINARY_API_KEY: your_api_key
-      CLOUDINARY_API_SECRET: your_api_secret
+      EMAIL_HOST_USER: shemaroger43@gmail.com
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID}
+      GOOGLE_OAUTH_CLIENT_SECRET: ${GOOGLE_OAUTH_CLIENT_SECRET}
+      GOOGLE_OAUTH_REDIRECT_URI: https://www.giftrwa.org/api/google-drive/callback/
+      GOOGLE_DRIVE_TOKEN_FILE: secrets/google-drive-token.json
+      GOOGLE_DRIVE_ROOT_FOLDER_NAME: GiftApp Storage
+      FRONTEND_URL: https://www.giftrwa.org
+      BACKEND_BASE_URL: https://www.giftrwa.org
+    volumes:
+      # Without this, `docker compose build --no-cache` wipes the Google
+      # Drive OAuth refresh token (and any other file under secrets/) on
+      # every single deploy, forcing re-authorization each time.
+      - backend_secrets:/app/secrets
     depends_on:
       db:
         condition: service_healthy
@@ -57,6 +66,7 @@ services:
 
 volumes:
   postgres_data:
+  backend_secrets:
 
 networks:
   giftrwa_network:
