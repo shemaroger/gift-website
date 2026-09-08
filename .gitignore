@@ -1,5 +1,6 @@
 giftwebsite/.env
 gift-frontend/.env
+.env
 *.pyc
 __pycache__/
 giftwebsite/media/
