@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { fetchAds, deleteAds } from "../../api";
-import { EyeIcon, Trash2 } from 'lucide-react';
+import { EyeIcon, Edit, Trash2 } from 'lucide-react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -396,9 +396,17 @@ const GetAds = () => {
                       <button
                         onClick={() => openAdDetails(ad)}
                         className="text-orange-600 hover:text-orange-900 mr-4"
+                        title="View details"
                       >
                         <EyeIcon className="h-5 w-5" />
                       </button>
+                      <Link
+                        to={`/dashboard/editAds/${ad.id}`}
+                        className="text-orange-600 hover:text-orange-900 mr-4"
+                        title="Edit ad"
+                      >
+                        <Edit className="h-5 w-5" />
+                      </Link>
                       <button
                         onClick={() => handleDeleteAd(ad.id)}
                         className="text-orange-600 hover:text-orange-900"
