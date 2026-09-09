@@ -207,10 +207,10 @@ const GetAds = () => {
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header section */}
       <div className="mb-6 max-w-8xl mx-auto">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h1 className="text-2xl font-bold font-display">Advertisement Management</h1>
           <div className="flex space-x-2">
-            <Link to="/dashboard/AddAds" className="px-4 py-2 text-sm rounded-lg bg-orange-600 hover:bg-orange-700 text-white">
+            <Link to="/dashboard/AddAds" className="px-4 py-2 text-sm rounded-lg bg-orange-600 hover:bg-orange-700 text-white whitespace-nowrap">
               + New Ad
             </Link>
           </div>
