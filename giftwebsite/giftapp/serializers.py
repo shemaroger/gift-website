@@ -107,6 +107,50 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         user.roles.add(default_role)
         return user
 
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    """
+    Admin-facing user edit (see UserUpdateView) — distinct from
+    UserRegisterSerializer, which only declares registration fields
+    (email/password/first_name/last_name/profile) and silently drops
+    is_active/is_staff/is_verified/roles on save since they aren't part of
+    its Meta.fields at all.
+    """
+    password = serializers.CharField(
+        write_only=True, required=False, allow_blank=True, style={'input_type': 'password'}
+    )
+    role_ids = serializers.PrimaryKeyRelatedField(
+        source='roles', queryset=Role.objects.all(), many=True, required=False
+    )
+
+    class Meta:
+        model = User
+        fields = [
+            'email', 'first_name', 'last_name',
+            'is_active', 'is_staff', 'is_verified',
+            'password', 'role_ids',
+        ]
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        roles = validated_data.pop('roles', None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        # DRF's default ModelSerializer.update() would otherwise assign this
+        # straight to instance.password, storing it in plaintext instead of
+        # hashed.
+        if password:
+            instance.set_password(password)
+
+        instance.save()
+
+        if roles is not None:
+            instance.roles.set(roles)
+
+        return instance
+
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(style={'input_type': 'password'})

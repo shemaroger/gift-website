@@ -65,8 +65,12 @@ class RoleRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
 class UserUpdateView(generics.UpdateAPIView):
     queryset = User.objects.all()
-    serializer_class = UserRegisterSerializer 
-    permission_classes = [permissions.AllowAny] 
+    serializer_class = UserUpdateSerializer
+    # Was AllowAny — this endpoint can set is_staff on any account, so it
+    # must be admin-gated. Its only caller is the dashboard's User
+    # Management edit form, which already sends an admin's JWT via the
+    # authenticated api.jsx client.
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
     lookup_field = 'id'
 
     def patch(self, request, *args, **kwargs):
@@ -110,15 +114,39 @@ class RegisterView(generics.CreateAPIView):
         user.roles.add(default_role)        
         UserProfile.objects.create(user=user)
 
+# .values() with no field list pulls every column, including password
+# hash, live OTP code, and verification token — never expose those over
+# the API. This list backs both views below.
+SAFE_USER_FIELDS = [
+    'id', 'email', 'username', 'first_name', 'last_name',
+    'is_active', 'is_staff', 'is_verified',
+    'created_at', 'updated_at', 'last_login',
+]
+
+
 class UserListView(APIView):  # Not using generics.ListAPIView since you're overriding get()
-    def get(self, request): 
-        users = User.objects.values().all()
+    # Was implicitly IsAuthenticated (the project default) with no staff
+    # check — any logged-in visitor could list every user's account.
+    permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
+
+    def get(self, request):
+        users = User.objects.values(*SAFE_USER_FIELDS).all()
         return Response(list(users), status=status.HTTP_200_OK)
-    
+
 class UserDetailView(APIView):
+    # Deliberately AllowAny — see CLAUDE.md: Login.jsx and Dashboard.jsx
+    # call this unauthenticated. Don't change the permission without also
+    # updating those two call sites. The field whitelist below is what
+    # actually matters here: this endpoint is public, so it must never
+    # return password/otp/verification_token regardless of auth.
     permission_classes = [permissions.AllowAny]
     def get(self, request, id):
-        user = User.objects.values().get(id=id)
+        user = User.objects.values(*SAFE_USER_FIELDS).get(id=id)
+        # .values() never includes M2M fields, so `roles` was silently
+        # missing before — the admin edit form (AddUser.jsx) reads
+        # userData.roles to pre-fill role checkboxes, and with no key at
+        # all here it always fell back to an empty selection.
+        user['roles'] = list(Role.objects.filter(users__id=id).values_list('id', flat=True))
         return Response(user, status=status.HTTP_200_OK)
 
 class LoginView(APIView):
