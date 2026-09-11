@@ -39,6 +39,7 @@ from django.core.files.base import ContentFile
 from django.core.files.storage import Storage
 from django.utils.deconstruct import deconstructible
 
+from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import AuthorizedSession, Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import Flow
@@ -279,7 +280,19 @@ class GoogleDriveClient:
                     "complete the one-time consent flow."
                 )
         if self._credentials.expired and self._credentials.refresh_token:
-            self._credentials.refresh(Request())
+            try:
+                self._credentials.refresh(Request())
+            except RefreshError as e:
+                # The stored refresh token itself is dead (revoked, or — for
+                # an OAuth app still in Google's "Testing" publishing status —
+                # the hard 7-day expiry Google imposes on every refresh token
+                # issued that way). Nothing short of redoing the one-time
+                # consent flow fixes this, so surface it as our own clean
+                # error instead of letting an uncaught RefreshError 500.
+                raise GoogleDriveNotAuthorized(
+                    "Google Drive authorization has expired or been revoked. As an admin, use "
+                    "the 'Connect Google Drive' button in the dashboard to re-authorize."
+                ) from e
             _save_credentials(self._credentials)
         return self._credentials
 

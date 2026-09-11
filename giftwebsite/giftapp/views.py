@@ -1,4 +1,3 @@
-import os
 from django.conf import settings
 from rest_framework import generics, permissions, status, filters
 from django_filters.rest_framework import DjangoFilterBackend
@@ -892,61 +891,24 @@ class GalleryItemListCreateAPI(APIView):
         return Response(serializer.data)
 
     def post(self, request):
-        files = request.FILES.getlist('image') if 'image' in request.FILES else []        
-        created_items = []
-        errors = []
-        
-        if not files:
-            serializer = GalleryItemCreateSerializer(data=request.data, context={'request': request})
-            if serializer.is_valid():
-                try:
-                    item = serializer.save(uploaded_by=request.user)
-                except GoogleDriveError as e:
-                    return Response(
-                        {'error': f'Upload failed: the file was rejected by media storage ({e}). It may be too large for a single upload.'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-                created_items.append(GalleryItemSerializer(item, context={'request': request}).data)
-                return Response(created_items, status=status.HTTP_201_CREATED)
+        # The upload form only ever sends one image/video at a time (no
+        # multi-select in the UI) — this mirrors AdListCreateAPI's plain
+        # validate-once/save-once/respond-once shape exactly, rather than
+        # branching into a speculative (and unused) multi-file loop.
+        serializer = GalleryItemCreateSerializer(data=request.data, context={'request': request})
+        if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        # Multiple image upload
-        for i, file in enumerate(files):
-            data = request.data.copy()
-            data['image'] = file
-            data['media_type'] = 'image'
-            
-            # Generate title if not provided
-            if not data.get('title'):
-                filename = os.path.splitext(file.name)[0]
-                data['title'] = filename
-            
-            serializer = GalleryItemCreateSerializer(data=data, context={'request': request})
-            if serializer.is_valid():
-                try:
-                    item = serializer.save(uploaded_by=request.user)
-                except GoogleDriveError as e:
-                    errors.append({
-                        'file': file.name,
-                        'errors': {'error': f'Upload failed: rejected by media storage ({e}). It may be too large.'}
-                    })
-                    continue
-
-                created_items.append(GalleryItemSerializer(item, context={'request': request}).data)
-            else:
-                errors.append({
-                    'file': file.name,
-                    'errors': serializer.errors
-                })
-        
-        if errors and not created_items:
-            return Response({'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
-        
-        response_data = {
-            'created': created_items,
-            'errors': errors
-        }
-        return Response(response_data, status=status.HTTP_201_CREATED)
+        try:
+            item = serializer.save(uploaded_by=request.user)
+        except GoogleDriveError as e:
+            return Response(
+                {'error': f'Upload failed: the file was rejected by media storage ({e}). It may be too large for a single upload.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        return Response(
+            GalleryItemSerializer(item, context={'request': request}).data,
+            status=status.HTTP_201_CREATED
+        )
 
 class GalleryItemDetailAPI(APIView):
     parser_classes = (MultiPartParser, FormParser)
