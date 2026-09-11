@@ -23,9 +23,6 @@ import random
 from rest_framework.decorators import action
 from rest_framework.decorators import api_view
 from rest_framework.pagination import PageNumberPagination
-from PIL import Image
-from io import BytesIO
-from django.core.files.base import ContentFile
 from django.shortcuts import redirect
 from django.http import StreamingHttpResponse, HttpResponse
 from django.core.cache import cache
@@ -935,10 +932,6 @@ class GalleryItemListCreateAPI(APIView):
                     })
                     continue
 
-                # Generate thumbnail
-                if item.image:
-                    self.generate_thumbnail(item)
-
                 created_items.append(GalleryItemSerializer(item, context={'request': request}).data)
             else:
                 errors.append({
@@ -954,23 +947,6 @@ class GalleryItemListCreateAPI(APIView):
             'errors': errors
         }
         return Response(response_data, status=status.HTTP_201_CREATED)
-    
-    def generate_thumbnail(self, gallery_item):
-        img = Image.open(gallery_item.image)
-        img.thumbnail((300, 300))  # Create thumbnail
-        
-        thumb_io = BytesIO()
-        if img.format.lower() == 'jpeg':
-            img.save(thumb_io, format='JPEG')
-            ext = 'jpg'
-        else:
-            img.save(thumb_io, format='PNG')
-            ext = 'png'
-        
-        thumb_file = ContentFile(thumb_io.getvalue())
-        thumb_name = f"{os.path.splitext(gallery_item.image.name)[0]}_thumb.{ext}"
-        
-        gallery_item.thumbnail.save(thumb_name, thumb_file, save=True)
 
 class GalleryItemDetailAPI(APIView):
     parser_classes = (MultiPartParser, FormParser)
@@ -1017,10 +993,6 @@ class GalleryItemDetailAPI(APIView):
                     {'error': f'Upload failed: the file was rejected by media storage ({e}). It may be too large for a single upload.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-
-            # Regenerate thumbnail if image changed
-            if 'image' in request.data and updated_item.image:
-                self.generate_thumbnail(updated_item)
 
             return Response(
                 GalleryItemSerializer(updated_item, context={'request': request}).data
